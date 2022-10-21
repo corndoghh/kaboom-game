@@ -1,0 +1,26 @@
+{
+  "name": "kaboom-game",
+  "version": "1.0.0",
+  "description": "An isometric dungeon crawler made in kaboomjs for my school project",
+  "main": "app.js",
+  "scripts": {
+    "start": "./start.sh",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/corndoghh/kaboom-game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/corndoghh/kaboom-game/issues"
+  },
+  "homepage": "https://github.com/corndoghh/kaboom-game#readme",
+  "dependencies": {
+    "esbuild": "^0.15.12",
+    "express": "^4.18.2",
+    "kaboom": "^2000.2.9"
+  }
+}
