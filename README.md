@@ -4,6 +4,6 @@ An isometric dungeon crawler made in kaboomjs for my school project
 
 # Build instructions
 
-npm install, 
-sudo chmod +x start.sh, 
-npm start
+1) npm install  
+2) sudo chmod +x start.sh   
+3) npm start  
