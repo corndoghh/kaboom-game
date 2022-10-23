@@ -111,10 +111,10 @@
     return i * 180 / Math.PI;
   }
   a(Xt, "rad2deg");
-  function z(i, t, l) {
-    return t > l ? z(i, l, t) : Math.min(Math.max(i, t), l);
+  function z2(i, t, l) {
+    return t > l ? z2(i, l, t) : Math.min(Math.max(i, t), l);
   }
-  a(z, "clamp");
+  a(z2, "clamp");
   function Ve(i, t, l) {
     return i + (t - i) * l;
   }
@@ -124,7 +124,7 @@
   }
   a(dt, "map");
   function dr(i, t, l, w, U) {
-    return z(dt(i, t, l, w, U), w, U);
+    return z2(dt(i, t, l, w, U), w, U);
   }
   a(dr, "mapc");
   var N = class {
@@ -218,7 +218,7 @@
       b(this, "r", 255);
       b(this, "g", 255);
       b(this, "b", 255);
-      this.r = z(t, 0, 255), this.g = z(l, 0, 255), this.b = z(w, 0, 255);
+      this.r = z2(t, 0, 255), this.g = z2(l, 0, 255), this.b = z2(w, 0, 255);
     }
     static fromArray(t) {
       return new ue(t[0], t[1], t[2]);
@@ -997,7 +997,7 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     }
     a(_r, "loadBean");
     function Br(e) {
-      return e !== void 0 && (w.masterNode.gain.value = z(e, Or, Ir)), w.masterNode.gain.value;
+      return e !== void 0 && (w.masterNode.gain.value = z2(e, Or, Ir)), w.masterNode.gain.value;
     }
     a(Br, "volume");
     function Xe(e, n = { loop: false, volume: 1, speed: 1, detune: 0, seek: 0 }) {
@@ -1039,11 +1039,11 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       }, stopped() {
         return B("stopped()", "isStopped()"), this.isStopped();
       }, speed(y) {
-        return y !== void 0 && (c.playbackRate.value = z(y, ds, fs)), c.playbackRate.value;
+        return y !== void 0 && (c.playbackRate.value = z2(y, ds, fs)), c.playbackRate.value;
       }, detune(y) {
-        return c.detune ? (y !== void 0 && (c.detune.value = z(y, ps, ms)), c.detune.value) : 0;
+        return c.detune ? (y !== void 0 && (c.detune.value = z2(y, ps, ms)), c.detune.value) : 0;
       }, volume(y) {
-        return y !== void 0 && (s.gain.value = z(y, Or, Ir)), s.gain.value;
+        return y !== void 0 && (s.gain.value = z2(y, Or, Ir)), s.gain.value;
       }, loop() {
         c.loop = true;
       }, unloop() {
@@ -1861,9 +1861,9 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       }), H("f8", () => {
         C.paused = !C.paused;
       }), H("f7", () => {
-        C.timeScale = ge(z(C.timeScale - 0.2, 0, 2), 1);
+        C.timeScale = ge(z2(C.timeScale - 0.2, 0, 2), 1);
       }), H("f9", () => {
-        C.timeScale = ge(z(C.timeScale + 0.2, 0, 2), 1);
+        C.timeScale = ge(z2(C.timeScale + 0.2, 0, 2), 1);
       }), H("f10", () => {
         C.stepFrame();
       }), H("f5", () => {
@@ -2683,4 +2683,39 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
 
   // game.js
   no();
+  loadSprite("block", "sprites/block.png");
+  var size = 2.5;
+  var xMat = (x, y, w) => {
+    return (x + y * -1) * w / 2 * size;
+  };
+  var yMat = (x, y, h) => {
+    return (x * 0.5 + y * 0.5) * h / 2 * size;
+  };
+  var block = add([
+    sprite("block"),
+    scale(size),
+    pos(xMat(3, 1, 64), yMat(3, 1, 64)),
+    z(1)
+  ]);
+  add([
+    sprite("block"),
+    scale(size),
+    pos(xMat(4, 1, 64), yMat(4, 1, 64)),
+    z(2)
+  ]);
+  add([
+    sprite("block"),
+    scale(size),
+    pos(xMat(4, 2, 64), yMat(4, 2, 64)),
+    z(3)
+  ]);
+  add([
+    sprite("block"),
+    scale(size),
+    pos(xMat(4, 0, 64), yMat(4, 0, 64)),
+    z(4)
+  ]);
+  onUpdate(() => {
+    console.log(block.pos + " " + block.height);
+  });
 })();
