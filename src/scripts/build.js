@@ -2681,41 +2681,46 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     return ye;
   }, "default");
 
+  // world.js
+  var GTSCoords = (x, y, z3, multiplier) => {
+    return {
+      x: (x - z3) * multiplier,
+      y: (x + z3 - y * 2) * 0.5 * multiplier
+    };
+  };
+
+  // classes/object.js
+  var Object2 = class {
+    constructor(image, spawningCoords, size2) {
+      this.coords = {
+        x: spawningCoords.x,
+        y: spawningCoords.y,
+        z: spawningCoords.z
+      };
+      const ScreenCoords = GTSCoords(this.coords.x, this.coords.y, this.coords.z, 64 / 2 * size2);
+      this.sprite = add([
+        sprite(image),
+        scale(size2),
+        pos(ScreenCoords.x, ScreenCoords.y),
+        z(this.coords.y)
+      ]);
+    }
+    get GetSprite() {
+      return this.sprite;
+    }
+  };
+
   // game.js
   no();
   loadSprite("block", "sprites/block.png");
-  var size = 2.5;
-  var xMat = (x, y, w) => {
-    return (x + y * -1) * w / 2 * size;
-  };
-  var yMat = (x, y, h) => {
-    return (x * 0.5 + y * 0.5) * h / 2 * size;
-  };
-  var block = add([
-    sprite("block"),
-    scale(size),
-    pos(xMat(3, 1, 64), yMat(3, 1, 64)),
-    z(1)
-  ]);
-  add([
-    sprite("block"),
-    scale(size),
-    pos(xMat(4, 1, 64), yMat(4, 1, 64)),
-    z(2)
-  ]);
-  add([
-    sprite("block"),
-    scale(size),
-    pos(xMat(4, 2, 64), yMat(4, 2, 64)),
-    z(3)
-  ]);
-  add([
-    sprite("block"),
-    scale(size),
-    pos(xMat(4, 0, 64), yMat(4, 0, 64)),
-    z(4)
-  ]);
-  onUpdate(() => {
-    console.log(block.pos + " " + block.height);
-  });
+  var size = 1.25;
+  new Object2("block", { x: 3, y: 0, z: -1 }, size);
+  new Object2("block", { x: 4, y: 0, z: -1 }, size);
+  new Object2("block", { x: 5, y: 0, z: -1 }, size);
+  new Object2("block", { x: 3, y: 0, z: 0 }, size);
+  new Object2("block", { x: 4, y: -1, z: 0 }, size);
+  new Object2("block", { x: 5, y: 0, z: 0 }, size);
+  new Object2("block", { x: 3, y: 0, z: 1 }, size);
+  new Object2("block", { x: 4, y: 0, z: 1 }, size);
+  new Object2("block", { x: 5, y: 0, z: 1 }, size);
 })();

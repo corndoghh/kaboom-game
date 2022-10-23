@@ -11,6 +11,7 @@ app.listen(PORT, () => {
 app.use("/scripts", express.static(path.join(__dirname, "/src/scripts")))
 app.use("/sounds", express.static(path.join(__dirname, "/src/sounds")))
 app.use("/sprites", express.static(path.join(__dirname, "/src/sprites")))
+app.use("/class", express.static(path.join(__dirname, "src/scripts/classes")))
 
 
 app.get("/", (_req, res) => {
