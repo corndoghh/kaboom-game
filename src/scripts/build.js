@@ -111,10 +111,10 @@
     return i * 180 / Math.PI;
   }
   a(Xt, "rad2deg");
-  function z2(i, t, l) {
-    return t > l ? z2(i, l, t) : Math.min(Math.max(i, t), l);
+  function z(i, t, l) {
+    return t > l ? z(i, l, t) : Math.min(Math.max(i, t), l);
   }
-  a(z2, "clamp");
+  a(z, "clamp");
   function Ve(i, t, l) {
     return i + (t - i) * l;
   }
@@ -124,7 +124,7 @@
   }
   a(dt, "map");
   function dr(i, t, l, w, U) {
-    return z2(dt(i, t, l, w, U), w, U);
+    return z(dt(i, t, l, w, U), w, U);
   }
   a(dr, "mapc");
   var N = class {
@@ -218,7 +218,7 @@
       b(this, "r", 255);
       b(this, "g", 255);
       b(this, "b", 255);
-      this.r = z2(t, 0, 255), this.g = z2(l, 0, 255), this.b = z2(w, 0, 255);
+      this.r = z(t, 0, 255), this.g = z(l, 0, 255), this.b = z(w, 0, 255);
     }
     static fromArray(t) {
       return new ue(t[0], t[1], t[2]);
@@ -997,7 +997,7 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     }
     a(_r, "loadBean");
     function Br(e) {
-      return e !== void 0 && (w.masterNode.gain.value = z2(e, Or, Ir)), w.masterNode.gain.value;
+      return e !== void 0 && (w.masterNode.gain.value = z(e, Or, Ir)), w.masterNode.gain.value;
     }
     a(Br, "volume");
     function Xe(e, n = { loop: false, volume: 1, speed: 1, detune: 0, seek: 0 }) {
@@ -1039,11 +1039,11 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       }, stopped() {
         return B("stopped()", "isStopped()"), this.isStopped();
       }, speed(y) {
-        return y !== void 0 && (c.playbackRate.value = z2(y, ds, fs)), c.playbackRate.value;
+        return y !== void 0 && (c.playbackRate.value = z(y, ds, fs)), c.playbackRate.value;
       }, detune(y) {
-        return c.detune ? (y !== void 0 && (c.detune.value = z2(y, ps, ms)), c.detune.value) : 0;
+        return c.detune ? (y !== void 0 && (c.detune.value = z(y, ps, ms)), c.detune.value) : 0;
       }, volume(y) {
-        return y !== void 0 && (s.gain.value = z2(y, Or, Ir)), s.gain.value;
+        return y !== void 0 && (s.gain.value = z(y, Or, Ir)), s.gain.value;
       }, loop() {
         c.loop = true;
       }, unloop() {
@@ -1861,9 +1861,9 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       }), H("f8", () => {
         C.paused = !C.paused;
       }), H("f7", () => {
-        C.timeScale = ge(z2(C.timeScale - 0.2, 0, 2), 1);
+        C.timeScale = ge(z(C.timeScale - 0.2, 0, 2), 1);
       }), H("f9", () => {
-        C.timeScale = ge(z2(C.timeScale + 0.2, 0, 2), 1);
+        C.timeScale = ge(z(C.timeScale + 0.2, 0, 2), 1);
       }), H("f10", () => {
         C.stepFrame();
       }), H("f5", () => {
@@ -2682,88 +2682,56 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
   }, "default");
 
   // GlobalVarTracker.js
-  var animations = /* @__PURE__ */ new Map();
-  var animationCycle = () => {
-    console.log("c");
-    animations.forEach((value, key) => {
-      key.move(value);
-    });
-  };
+  var tileSize = 32 * 1.25;
 
   // classes/object.js
   var GameObject = class {
-    constructor(image, coords, size2, options) {
-      this.multiplierValue = 64 / 2 * size2;
-      coords.multiplier(this.multiplierValue);
-      this.coords = coords;
+    constructor(spriteImage, vec3, options) {
+      this.spriteImage = spriteImage;
+      this.vec3 = vec3;
+      this.options = options;
       this.sprite = add([
-        sprite(image),
-        scale(size2),
-        pos(coords.screenPos.x, coords.screenPos.y),
-        z(coords.ZLayer)
+        sprite(spriteImage),
+        pos(vec3.screenPos.x, vec3.screenPos.y),
+        scale(tileSize / 32)
       ]);
-      Object.keys(options).forEach((key) => {
-        switch (key) {
-          case "anim":
-            this.anim(options[key].by, options[key].time);
-            break;
-          default:
-            console.log("none");
-        }
-      });
-    }
-    anim(transform, time) {
-      console.log("e");
-      if (transform === void 0 || time === void 0) {
-        return;
-      }
-      console.log("d");
-      animations.set(this, transform);
-    }
-    move(vec3) {
-      const tempCoords = vec3.passiveMultipler();
-      console.log(vec3.passiveMultipler());
-      delete tempCoords.pos;
-      delete tempCoords.ZLayer;
-    }
-    get GetSprite() {
-      return this.sprite;
     }
   };
 
   // classes/vec3.js
   var Vec3 = class {
-    constructor(x, y, z3) {
-      this.pos = {
-        x,
-        y,
-        z: z3
-      };
+    constructor(x, y, z2) {
+      this.pos = { x, y, z: z2 };
       this.update();
     }
-    update() {
-      this.ZLayer = this.pos.x + this.pos.y + this.pos.z;
-      this.screenPos = { x: this.pos.x - this.pos.z, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 };
-    }
     multiplier(x) {
-      console.log("fuck " + this.pos.x);
       this.pos.x *= x, this.pos.y *= x, this.pos.z *= x;
       this.update();
     }
-    passiveMultipler(x) {
-      return { pos: { x: this.pos.x * x, y: this.pos.y * x, z: this.pos.z * x }, ZLayer: this.pos.x * x + this.pos.y * x + this.pos.z * x };
+    add(vec3) {
+      this.pos.x += vec3.pos.x;
+      this.pos.z += vec3.pos.y;
+      this.pos.z += vec3.pos.z;
+      this.update();
+    }
+    sub(vec3) {
+      this.pos.x -= vec3.pos.x;
+      this.pos.z -= vec3.pos.y;
+      this.pos.z -= vec3.pos.z;
+      this.update();
+    }
+    update() {
+      this.z = this.pos.x + this.pos.y + this.pos.z;
+      this.screenPos = { x: (this.pos.x - this.pos.z) * tileSize, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 * tileSize };
     }
   };
 
   // game.js
   no();
   loadSprite("block", "sprites/block.png");
-  var size = 1.25;
-  new GameObject("block", new Vec3(1, 1, 1), size, {
-    anim: { by: new Vec3(1, 0, 1), time: 1 }
-  });
-  new GameObject("block", new Vec3(2, 1, 1), size, { hello: "hi" });
-  onUpdate(() => {
-    animationCycle();
-  });
+  console.log(new Vec3(1, 1, 1));
+  console.log(new Vec3(1, 0, 1));
+  console.log(new Vec3(0, 1, 1));
+  new GameObject("block", new Vec3(1, 0, 1));
+  new GameObject("block", new Vec3(0, -1, 0));
 })();
