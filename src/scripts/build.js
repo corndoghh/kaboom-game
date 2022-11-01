@@ -2681,32 +2681,77 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     return ye;
   }, "default");
 
-  // world.js
-  var GTSCoords = (x, y, z3, multiplier) => {
-    return {
-      x: (x - z3) * multiplier,
-      y: (x + z3 - y * 2) * 0.5 * multiplier
-    };
+  // GlobalVarTracker.js
+  var animations = /* @__PURE__ */ new Map();
+  var animationCycle = () => {
+    console.log("c");
+    animations.forEach((value, key) => {
+      key.move(value);
+    });
   };
 
   // classes/object.js
-  var Object2 = class {
-    constructor(image, spawningCoords, size2) {
-      this.coords = {
-        x: spawningCoords.x,
-        y: spawningCoords.y,
-        z: spawningCoords.z
-      };
-      const ScreenCoords = GTSCoords(this.coords.x, this.coords.y, this.coords.z, 64 / 2 * size2);
+  var GameObject = class {
+    constructor(image, coords, size2, options) {
+      this.multiplierValue = 64 / 2 * size2;
+      coords.multiplier(this.multiplierValue);
+      this.coords = coords;
       this.sprite = add([
         sprite(image),
         scale(size2),
-        pos(ScreenCoords.x, ScreenCoords.y),
-        z(this.coords.y)
+        pos(coords.screenPos.x, coords.screenPos.y),
+        z(coords.ZLayer)
       ]);
+      Object.keys(options).forEach((key) => {
+        switch (key) {
+          case "anim":
+            this.anim(options[key].by, options[key].time);
+            break;
+          default:
+            console.log("none");
+        }
+      });
+    }
+    anim(transform, time) {
+      console.log("e");
+      if (transform === void 0 || time === void 0) {
+        return;
+      }
+      console.log("d");
+      animations.set(this, transform);
+    }
+    move(vec3) {
+      const tempCoords = vec3.passiveMultipler();
+      console.log(vec3.passiveMultipler());
+      delete tempCoords.pos;
+      delete tempCoords.ZLayer;
     }
     get GetSprite() {
       return this.sprite;
+    }
+  };
+
+  // classes/vec3.js
+  var Vec3 = class {
+    constructor(x, y, z3) {
+      this.pos = {
+        x,
+        y,
+        z: z3
+      };
+      this.update();
+    }
+    update() {
+      this.ZLayer = this.pos.x + this.pos.y + this.pos.z;
+      this.screenPos = { x: this.pos.x - this.pos.z, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 };
+    }
+    multiplier(x) {
+      console.log("fuck " + this.pos.x);
+      this.pos.x *= x, this.pos.y *= x, this.pos.z *= x;
+      this.update();
+    }
+    passiveMultipler(x) {
+      return { pos: { x: this.pos.x * x, y: this.pos.y * x, z: this.pos.z * x }, ZLayer: this.pos.x * x + this.pos.y * x + this.pos.z * x };
     }
   };
 
@@ -2714,13 +2759,11 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
   no();
   loadSprite("block", "sprites/block.png");
   var size = 1.25;
-  new Object2("block", { x: 3, y: 0, z: -1 }, size);
-  new Object2("block", { x: 4, y: 0, z: -1 }, size);
-  new Object2("block", { x: 5, y: 0, z: -1 }, size);
-  new Object2("block", { x: 3, y: 0, z: 0 }, size);
-  new Object2("block", { x: 4, y: -1, z: 0 }, size);
-  new Object2("block", { x: 5, y: 0, z: 0 }, size);
-  new Object2("block", { x: 3, y: 0, z: 1 }, size);
-  new Object2("block", { x: 4, y: 0, z: 1 }, size);
-  new Object2("block", { x: 5, y: 0, z: 1 }, size);
+  new GameObject("block", new Vec3(1, 1, 1), size, {
+    anim: { by: new Vec3(1, 0, 1), time: 1 }
+  });
+  new GameObject("block", new Vec3(2, 1, 1), size, { hello: "hi" });
+  onUpdate(() => {
+    animationCycle();
+  });
 })();
