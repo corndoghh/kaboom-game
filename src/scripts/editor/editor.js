@@ -6,12 +6,16 @@ kaboom({
 
 const YLevel = 0
 
-const gridSize = {x: 40, y: 40}
+const gridSize = {x: 50, y: 3}
 
 
 const drawGridSquare = (dX, dY) => {
-    const x = ((dX - dY) * 32 + 32) + (width()/2 - 32) + ((gridSize.y - gridSize.x) * 16 )
-    const y = (((dX + dY + YLevel*2) * 0.5) * 32) + (height()/2 + 32) - ((gridSize.y + gridSize.x) * 8)
+    const x = ((dX - dY) * 32) + (width()/2) + ((gridSize.y - gridSize.x) * 16 )
+    const y = (((dX + dY) * 0.5) * 32) + (height()/2 + 32) - ((gridSize.y + gridSize.x) * 8)
+
+    // if (dX - dY == 0) {
+    //     console.log(x,y)
+    // }
 
     //(this.pos.x - this.pos.z) * tileSize, y: ((this.pos.x + this.pos.z - this.pos.y*2) * 0.5) * tileSize
 
@@ -50,6 +54,8 @@ onDraw(() => {
         //drawGridSquare(i, -i)
     }
     // console.log(count)
+
+
 
     // // drawGridSquare(0,0)
     // // drawGridSquare(2,-2)
@@ -100,7 +106,18 @@ let clickedPos = vec2(0)
 
 onUpdate(() => {
 
-    if (!isKeyDown("shift")) { return } 
+    if (!isKeyDown("shift")) { 
+        if (isMouseDown()) {
+            let mX = mousePos().x - (width()/2) - ((gridSize.y - gridSize.x) * 16 )
+            let mY = mousePos().y - (height()/2 + 32) + ((gridSize.y + gridSize.x) * 8)
+
+            const y = ((mX - (mY*2))/-2)
+            const x = mX+y
+            console.log(x / 32, y / 32)
+
+        }
+        return
+     } 
 
     onClick(() => {
         clickedPos = mousePos()
@@ -111,7 +128,7 @@ onUpdate(() => {
     if (isMouseDown()) {
         const newVec = clickedPos.sub(mousePos())
         clickedPos = mousePos()
-        camPos(camPos().add(newVec))
+        camPos(camPos().add(newVec.scale(1/camScale().x)))
         //camPos(mousePos().x, -mousePos().y)
         // drawLine({
         //     p1: clickedPos,
@@ -123,3 +140,5 @@ onUpdate(() => {
 
 })
 
+onKeyPress("=", () => { camScale(camScale().add(1)) } )
+onKeyPress("-", () => { if (camScale().sub(1).x > 0) {camScale(camScale().sub(1))}  } )

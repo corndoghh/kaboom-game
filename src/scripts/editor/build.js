@@ -2685,11 +2685,10 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
   no({
     background: [0, 0, 0]
   });
-  var YLevel = 0;
-  var gridSize = { x: 40, y: 40 };
+  var gridSize = { x: 50, y: 3 };
   var drawGridSquare = (dX, dY) => {
-    const x = (dX - dY) * 32 + 32 + (width() / 2 - 32) + (gridSize.y - gridSize.x) * 16;
-    const y = (dX + dY + YLevel * 2) * 0.5 * 32 + (height() / 2 + 32) - (gridSize.y + gridSize.x) * 8;
+    const x = (dX - dY) * 32 + width() / 2 + (gridSize.y - gridSize.x) * 16;
+    const y = (dX + dY) * 0.5 * 32 + (height() / 2 + 32) - (gridSize.y + gridSize.x) * 8;
     drawLine({
       p1: vec2(x, y),
       p2: vec2(x + 32, y - 16),
@@ -2743,6 +2742,13 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
   var clickedPos = vec2(0);
   onUpdate(() => {
     if (!isKeyDown("shift")) {
+      if (isMouseDown()) {
+        let mX = mousePos().x - width() / 2 - (gridSize.y - gridSize.x) * 16;
+        let mY = mousePos().y - (height() / 2 + 32) + (gridSize.y + gridSize.x) * 8;
+        const y = (mX - mY * 2) / -2;
+        const x = mX + y;
+        console.log(x / 32, y / 32);
+      }
       return;
     }
     onClick(() => {
@@ -2751,7 +2757,15 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     if (isMouseDown()) {
       const newVec = clickedPos.sub(mousePos());
       clickedPos = mousePos();
-      camPos(camPos().add(newVec));
+      camPos(camPos().add(newVec.scale(1 / camScale().x)));
+    }
+  });
+  onKeyPress("=", () => {
+    camScale(camScale().add(1));
+  });
+  onKeyPress("-", () => {
+    if (camScale().sub(1).x > 0) {
+      camScale(camScale().sub(1));
     }
   });
 })();
