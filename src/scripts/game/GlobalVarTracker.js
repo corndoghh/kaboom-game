@@ -1,5 +1,5 @@
 export const animations = new Map()
-export const tileSize = 32 * 1.25
+export const tileSize = 32 * 1
 
 
 export const animationCycle = () => {

@@ -1,7 +1,13 @@
-cd src/scripts
+cd src/scripts/game
 
 esbuild game.js --bundle > build.js
 
+cd ..
+cd editor
+esbuild editor.js --bundle > build.js
+
+
+cd ..
 cd ..
 cd ..
 

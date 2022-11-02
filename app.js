@@ -17,3 +17,7 @@ app.use("/class", express.static(path.join(__dirname, "src/scripts/classes")))
 app.get("/", (_req, res) => {
     res.sendFile(path.join(__dirname, "/page.html"))
 })
+
+app.get("/editor", (_req, res) => {
+    res.sendFile(path.join(__dirname, "/levelEditor.html"))
+})
