@@ -1,37 +1,18 @@
 import kaboom from "kaboom";
-import { GameObject } from "./classes/object"
-import { Vec3 } from "./classes/vec3"
-import { animationCycle, tileSize } from "./GlobalVarTracker";
+import { generateBoard, destroyObject } from "./levelGeneration"
+import { load } from "./loadAssets"
+import { screenToGlobal } from "./classes/vec3"
 
-kaboom()
+kaboom({
+    background: [0,0,0]
+})
 
-loadSprite("block", "sprites/block.png")
+load()
 
-// const ob = new GameObject("block", new Vec3(1,1,1), {
-//     anim: {by: new Vec3(1,0,1), time: 1}  
-// })
-const ob2 = new GameObject("block", new Vec3(0,0,0), {hello: "hi"})
-console.log(new Vec3(1,1,1))
-console.log(new Vec3(1,0,1))
-console.log(new Vec3(0,1,1))
+generateBoard()
 
-
-
-// add([
-//     sprite("block"),
-//     pos(new Vec3(1,0,-1).screenPos.x,new Vec3(1,0,-1).screenPos.y),
-//     z(new Vec3(1,0,-1).z),
-//     scale(tileSize/32)
-// ])
-// add([
-//     sprite("block"),
-//     pos(new Vec3(0,-1,-1).screenPos.x,new Vec3(0,-1,-1).screenPos.y),
-//     z(new Vec3(0,-1,-1).z),
-//     scale(tileSize/32)
-
-// ])
-
-
-
-
+//click loop
+onMouseDown(() => {
+    destroyObject(screenToGlobal(mousePos()))
+})
 

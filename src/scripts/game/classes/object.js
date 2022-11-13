@@ -1,7 +1,6 @@
 // import { animations } from "../GlobalVarTracker"
 // import { tileSize } from "../GlobalVarTracker"
 
-import { tileSize } from "../GlobalVarTracker"
 
 // export class GameObject {
 //     constructor(image, coords, options) {

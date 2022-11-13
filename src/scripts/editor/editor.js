@@ -6,12 +6,17 @@ kaboom({
 
 const YLevel = 0
 
-const gridSize = {x: 50, y: 3}
+const a = 25
+
+const gridSize = {x: a, y: a}
 
 
 const drawGridSquare = (dX, dY) => {
     const x = ((dX - dY) * 32) + (width()/2) + ((gridSize.y - gridSize.x) * 16 )
     const y = (((dX + dY) * 0.5) * 32) + (height()/2 + 32) - ((gridSize.y + gridSize.x) * 8)
+    if (dY == 0 && dX == 0) {
+        console.log(y)
+    }
 
     // if (dX - dY == 0) {
     //     console.log(x,y)

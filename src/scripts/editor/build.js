@@ -2685,10 +2685,14 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
   no({
     background: [0, 0, 0]
   });
-  var gridSize = { x: 50, y: 3 };
+  var a2 = 25;
+  var gridSize = { x: a2, y: a2 };
   var drawGridSquare = (dX, dY) => {
     const x = (dX - dY) * 32 + width() / 2 + (gridSize.y - gridSize.x) * 16;
     const y = (dX + dY) * 0.5 * 32 + (height() / 2 + 32) - (gridSize.y + gridSize.x) * 8;
+    if (dY == 0 && dX == 0) {
+      console.log(y);
+    }
     drawLine({
       p1: vec2(x, y),
       p2: vec2(x + 32, y - 16),

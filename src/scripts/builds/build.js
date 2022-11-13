@@ -2681,24 +2681,8 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     return ye;
   }, "default");
 
-  // GlobalVarTracker.js
-  var tileSize = 32 * 1;
-
-  // classes/object.js
-  var GameObject = class {
-    constructor(spriteImage, vec3, options) {
-      this.spriteImage = spriteImage;
-      this.vec3 = vec3;
-      this.options = options;
-      this.sprite = add([
-        sprite(spriteImage),
-        pos(vec3.screenPos.x, vec3.screenPos.y),
-        scale(tileSize / 32)
-      ]);
-    }
-  };
-
   // classes/vec3.js
+  var grid = 25;
   var Vec3 = class {
     constructor(x, y, z2) {
       this.pos = { x, y, z: z2 };
@@ -2722,15 +2706,88 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     }
     update() {
       this.z = this.pos.x + this.pos.y + this.pos.z;
-      this.screenPos = { x: (this.pos.x - this.pos.z) * tileSize, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 * tileSize };
+      this.screenPos = { x: (this.pos.x - this.pos.z) * 32 + width() / 2 - 32, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 * 32 + height() / 2 - (grid + grid) * 8 };
     }
+  };
+  var screenToGlobal = (vec2) => {
+    let mX = vec2.x - width() / 2;
+    let mY = vec2.y - height() / 2 + (grid + grid) * 8;
+    mY = (mX - mY * 2) / -2;
+    mX = mX + mY;
+    const y = Math.floor(Math.floor(mY) / 32);
+    const x = Math.floor(Math.floor(mX) / 32);
+    return new Vec3(x, 0, y);
+  };
+
+  // levelGeneration.js
+  var blocks = /* @__PURE__ */ new Map();
+  function isEqual(obj1, obj2) {
+    var props1 = Object.getOwnPropertyNames(obj1);
+    var props2 = Object.getOwnPropertyNames(obj2);
+    if (props1.length != props2.length) {
+      return false;
+    }
+    for (var i = 0; i < props1.length; i++) {
+      let val1 = obj1[props1[i]];
+      let val2 = obj2[props1[i]];
+      let isObjects = isObject(val1) && isObject(val2);
+      if (isObjects && !isEqual(val1, val2) || !isObjects && val1 !== val2) {
+        return false;
+      }
+    }
+    return true;
+  }
+  function isObject(object) {
+    return object != null && typeof object === "object";
+  }
+  var block = class {
+    constructor(image, globalLocation) {
+      this.image = image;
+      this.globalLocation = globalLocation;
+      this.sprite = add([
+        sprite(image),
+        pos(globalLocation.screenPos.x, globalLocation.screenPos.y)
+      ]);
+      blocks.set(globalLocation, this);
+    }
+  };
+  var generateBoard = () => {
+    for (let i = 0; i < 25; i++) {
+      for (let j = 0; j < 25; j++) {
+        new block("block", new Vec3(i, 1 / i - 1 / j, j));
+      }
+    }
+  };
+  var destroyObject = (vec3) => {
+    let keys = [...blocks.keys()];
+    let block2 = void 0;
+    for (let i = 0; i < keys.length; i++) {
+      if (isEqual(keys[i], vec3)) {
+        block2 = { f: blocks.get(keys[i]), s: keys[i] };
+        break;
+      }
+    }
+    if (block2 === void 0) {
+      return;
+    }
+    console.log("a");
+    block2.f.sprite.destroy();
+    block2.f = null;
+    blocks.delete(block2.s);
+  };
+
+  // loadAssets.js
+  var load = () => {
+    loadSprite("block", "sprites/block.png");
   };
 
   // game.js
-  no();
-  loadSprite("block", "sprites/block.png");
-  var ob2 = new GameObject("block", new Vec3(0, 0, 0), { hello: "hi" });
-  console.log(new Vec3(1, 1, 1));
-  console.log(new Vec3(1, 0, 1));
-  console.log(new Vec3(0, 1, 1));
+  no({
+    background: [0, 0, 0]
+  });
+  load();
+  generateBoard();
+  onMouseDown(() => {
+    destroyObject(screenToGlobal(mousePos()));
+  });
 })();
