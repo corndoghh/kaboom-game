@@ -1,11 +1,12 @@
 import kaboom from "kaboom";
 import { loader } from "./levelLoader"
+import { loadAssets } from "./loadAssets"
 
 kaboom({
     background: [0,0,0]
 })
 
-loadSprite("block", "sprites/tile.png")
+loadAssets()
 
 loader()
 

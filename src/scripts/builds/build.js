@@ -2711,10 +2711,15 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     });
   };
 
+  // loadAssets.js
+  var loadAssets = () => {
+    loadSprite("block", "sprites/tile.png");
+  };
+
   // game.js
   no({
     background: [0, 0, 0]
   });
-  loadSprite("block", "sprites/tile.png");
+  loadAssets();
   loader();
 })();

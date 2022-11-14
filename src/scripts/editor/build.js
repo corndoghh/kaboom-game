@@ -2792,11 +2792,6 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     }).then((response) => response.json()).then((response) => console.log(JSON.stringify(response)));
   };
 
-  // loadAssets.js
-  var load = () => {
-    loadSprite("block", "sprites/block.png");
-  };
-
   // editor.js
   no({
     background: [0, 0, 0]

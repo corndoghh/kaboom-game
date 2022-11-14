@@ -1,6 +1,6 @@
 import kaboom from "kaboom";
 import { destroyObject, createObject, saveLevel } from "./blocks"
-import { load } from "./loadAssets"
+import { loadAssets } from "./loadAssets"
 import { screenToGlobal } from "../game/classes/vec3"
 
 kaboom({
