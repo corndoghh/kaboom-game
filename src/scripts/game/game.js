@@ -1,18 +1,27 @@
 import kaboom from "kaboom";
-import { generateBoard, destroyObject } from "./levelGeneration"
-import { load } from "./loadAssets"
-import { screenToGlobal } from "./classes/vec3"
+import { loader } from "./levelLoader"
 
 kaboom({
     background: [0,0,0]
 })
 
-load()
+loadSprite("block", "sprites/tile.png")
 
-generateBoard()
+loader()
 
-//click loop
-onMouseDown(() => {
-    destroyObject(screenToGlobal(mousePos()))
-})
 
+
+// fetch('/load', {
+//     method: 'POST',
+//     headers: {
+//         'Accept': 'application/json',
+//         'Content-Type': 'application/json'
+//     },
+//     body: JSON.stringify({ "file": "level" })
+// })
+// .then(response => response.json())
+// .then(response => {
+//     [...response].forEach((e) => {
+//         console.log(e)
+//     })
+// })

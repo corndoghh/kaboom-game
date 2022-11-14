@@ -50,16 +50,16 @@
 //     get GetSprite() { return this.sprite }
 // }
 
-export class GameObject {
-    constructor(spriteImage, vec3, options) {
-        this.spriteImage = spriteImage
+export class block {
+    constructor(image, vec3, options) {
+        this.image = image
         this.vec3 = vec3
         this.options = options
 
         this.sprite = add([
-            sprite(spriteImage),
+            sprite(image),
             pos(vec3.screenPos.x, vec3.screenPos.y),
-            scale(tileSize/32),
+            z(vec3.z)
         ])
     }
 }

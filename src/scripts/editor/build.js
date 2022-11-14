@@ -111,10 +111,10 @@
     return i * 180 / Math.PI;
   }
   a(Xt, "rad2deg");
-  function z(i, t, l) {
-    return t > l ? z(i, l, t) : Math.min(Math.max(i, t), l);
+  function z2(i, t, l) {
+    return t > l ? z2(i, l, t) : Math.min(Math.max(i, t), l);
   }
-  a(z, "clamp");
+  a(z2, "clamp");
   function Ve(i, t, l) {
     return i + (t - i) * l;
   }
@@ -124,7 +124,7 @@
   }
   a(dt, "map");
   function dr(i, t, l, w, U) {
-    return z(dt(i, t, l, w, U), w, U);
+    return z2(dt(i, t, l, w, U), w, U);
   }
   a(dr, "mapc");
   var N = class {
@@ -218,7 +218,7 @@
       b(this, "r", 255);
       b(this, "g", 255);
       b(this, "b", 255);
-      this.r = z(t, 0, 255), this.g = z(l, 0, 255), this.b = z(w, 0, 255);
+      this.r = z2(t, 0, 255), this.g = z2(l, 0, 255), this.b = z2(w, 0, 255);
     }
     static fromArray(t) {
       return new ue(t[0], t[1], t[2]);
@@ -997,7 +997,7 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     }
     a(_r, "loadBean");
     function Br(e) {
-      return e !== void 0 && (w.masterNode.gain.value = z(e, Or, Ir)), w.masterNode.gain.value;
+      return e !== void 0 && (w.masterNode.gain.value = z2(e, Or, Ir)), w.masterNode.gain.value;
     }
     a(Br, "volume");
     function Xe(e, n = { loop: false, volume: 1, speed: 1, detune: 0, seek: 0 }) {
@@ -1039,11 +1039,11 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       }, stopped() {
         return B("stopped()", "isStopped()"), this.isStopped();
       }, speed(y) {
-        return y !== void 0 && (c.playbackRate.value = z(y, ds, fs)), c.playbackRate.value;
+        return y !== void 0 && (c.playbackRate.value = z2(y, ds, fs)), c.playbackRate.value;
       }, detune(y) {
-        return c.detune ? (y !== void 0 && (c.detune.value = z(y, ps, ms)), c.detune.value) : 0;
+        return c.detune ? (y !== void 0 && (c.detune.value = z2(y, ps, ms)), c.detune.value) : 0;
       }, volume(y) {
-        return y !== void 0 && (s.gain.value = z(y, Or, Ir)), s.gain.value;
+        return y !== void 0 && (s.gain.value = z2(y, Or, Ir)), s.gain.value;
       }, loop() {
         c.loop = true;
       }, unloop() {
@@ -1861,9 +1861,9 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       }), H("f8", () => {
         C.paused = !C.paused;
       }), H("f7", () => {
-        C.timeScale = ge(z(C.timeScale - 0.2, 0, 2), 1);
+        C.timeScale = ge(z2(C.timeScale - 0.2, 0, 2), 1);
       }), H("f9", () => {
-        C.timeScale = ge(z(C.timeScale + 0.2, 0, 2), 1);
+        C.timeScale = ge(z2(C.timeScale + 0.2, 0, 2), 1);
       }), H("f10", () => {
         C.stepFrame();
       }), H("f5", () => {
@@ -2681,95 +2681,139 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     return ye;
   }, "default");
 
+  // ../game/classes/vec3.js
+  var grid = 25;
+  var Vec3 = class {
+    constructor(x, y, z3) {
+      this.pos = { x, y, z: z3 };
+      this.update();
+    }
+    multiplier(x) {
+      this.pos.x *= x, this.pos.y *= x, this.pos.z *= x;
+      this.update();
+    }
+    add(vec3) {
+      this.pos.x += vec3.pos.x;
+      this.pos.z += vec3.pos.y;
+      this.pos.z += vec3.pos.z;
+      this.update();
+    }
+    sub(vec3) {
+      this.pos.x -= vec3.pos.x;
+      this.pos.z -= vec3.pos.y;
+      this.pos.z -= vec3.pos.z;
+      this.update();
+    }
+    update() {
+      this.z = this.pos.x + this.pos.y + this.pos.z;
+      this.screenPos = { x: (this.pos.x - this.pos.z) * 32 + width() / 2 - 32, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 * 32 + height() / 2 - (grid + grid) * 8 };
+    }
+  };
+  var screenToGlobal = (vec2) => {
+    let mX = vec2.x - width() / 2;
+    let mY = vec2.y - height() / 2 + (grid + grid) * 8;
+    mY = (mX - mY * 2) / -2;
+    mX = mX + mY;
+    const y = Math.floor(Math.floor(mY) / 32);
+    const x = Math.floor(Math.floor(mX) / 32);
+    return new Vec3(x, 0, y);
+  };
+
+  // blocks.js
+  var blocks = /* @__PURE__ */ new Map();
+  function isEqual(obj1, obj2) {
+    var props1 = Object.getOwnPropertyNames(obj1);
+    var props2 = Object.getOwnPropertyNames(obj2);
+    if (props1.length != props2.length) {
+      return false;
+    }
+    for (var i = 0; i < props1.length; i++) {
+      let val1 = obj1[props1[i]];
+      let val2 = obj2[props1[i]];
+      let isObjects = isObject(val1) && isObject(val2);
+      if (isObjects && !isEqual(val1, val2) || !isObjects && val1 !== val2) {
+        return false;
+      }
+    }
+    return true;
+  }
+  function isObject(object) {
+    return object != null && typeof object === "object";
+  }
+  var block = class {
+    constructor(image, globalLocation) {
+      let keys = [...blocks.keys()];
+      for (let i = 0; i < keys.length; i++) {
+        if (isEqual(keys[i], globalLocation)) {
+          return;
+        }
+      }
+      this.image = image;
+      this.globalLocation = globalLocation;
+      this.sprite = add([
+        sprite(image),
+        pos(globalLocation.screenPos.x, globalLocation.screenPos.y),
+        z(globalLocation.z)
+      ]);
+      blocks.set(globalLocation, this);
+    }
+  };
+  var destroyObject = (vec3) => {
+    let keys = [...blocks.keys()];
+    let block2 = void 0;
+    for (let i = 0; i < keys.length; i++) {
+      if (isEqual(keys[i], vec3)) {
+        block2 = { f: blocks.get(keys[i]), s: keys[i] };
+        break;
+      }
+    }
+    if (block2 === void 0) {
+      return;
+    }
+    block2.f.sprite.destroy();
+    block2.f = null;
+    blocks.delete(block2.s);
+  };
+  var createObject = (vec3) => {
+    new block("block", vec3);
+  };
+  var saveLevel = () => {
+    const savedBlocks = [];
+    [...blocks.values()].forEach((ob) => {
+      savedBlocks.push({ pos: ob.globalLocation, image: ob.image });
+    });
+    fetch("/save", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(savedBlocks)
+    }).then((response) => response.json()).then((response) => console.log(JSON.stringify(response)));
+  };
+
+  // loadAssets.js
+  var load = () => {
+    loadSprite("block", "sprites/block.png");
+  };
+
   // editor.js
   no({
     background: [0, 0, 0]
   });
-  var a2 = 25;
-  var gridSize = { x: a2, y: a2 };
-  var drawGridSquare = (dX, dY) => {
-    const x = (dX - dY) * 32 + width() / 2 + (gridSize.y - gridSize.x) * 16;
-    const y = (dX + dY) * 0.5 * 32 + (height() / 2 + 32) - (gridSize.y + gridSize.x) * 8;
-    if (dY == 0 && dX == 0) {
-      console.log(y);
-    }
-    drawLine({
-      p1: vec2(x, y),
-      p2: vec2(x + 32, y - 16),
-      color: rgb(0, 0, 255)
-    });
-    drawLine({
-      p1: vec2(x + 32, y - 16),
-      p2: vec2(x, y - 32),
-      color: rgb(0, 0, 255)
-    });
-    drawLine({
-      p1: vec2(x, y - 32),
-      p2: vec2(x - 32, y - 16),
-      color: rgb(0, 0, 255)
-    });
-    drawLine({
-      p1: vec2(x - 32, y - 16),
-      p2: vec2(x, y),
-      color: rgb(0, 0, 255)
-    });
-  };
-  onDraw(() => {
-    let count = 0;
-    for (let i = 0; i < gridSize.y; i++) {
-      for (let j = 0; j < gridSize.x; j++) {
-        drawGridSquare(j, i);
-        count++;
-      }
-    }
-    drawLine({
-      p1: vec2(width() / 2, height() / 2),
-      p2: vec2(width() / 2, 0),
-      color: rgb(0, 0, 255)
-    });
-    drawLine({
-      p1: vec2(width() / 2, height() / 2),
-      p2: vec2(width() / 2, height()),
-      color: rgb(0, 0, 255)
-    });
-    drawLine({
-      p1: vec2(width() / 2, height() / 2),
-      p2: vec2(0, height() / 2),
-      color: rgb(0, 0, 255)
-    });
-    drawLine({
-      p1: vec2(width() / 2, height() / 2),
-      p2: vec2(width(), height() / 2),
-      color: rgb(0, 0, 255)
-    });
+  load();
+  var brushToggle = false;
+  onKeyPress("shift", () => {
+    brushToggle = !brushToggle;
   });
-  var clickedPos = vec2(0);
-  onUpdate(() => {
-    if (!isKeyDown("shift")) {
-      if (isMouseDown()) {
-        let mX = mousePos().x - width() / 2 - (gridSize.y - gridSize.x) * 16;
-        let mY = mousePos().y - (height() / 2 + 32) + (gridSize.y + gridSize.x) * 8;
-        const y = (mX - mY * 2) / -2;
-        const x = mX + y;
-        console.log(x / 32, y / 32);
-      }
-      return;
-    }
-    onClick(() => {
-      clickedPos = mousePos();
-    });
-    if (isMouseDown()) {
-      const newVec = clickedPos.sub(mousePos());
-      clickedPos = mousePos();
-      camPos(camPos().add(newVec.scale(1 / camScale().x)));
+  onMouseDown(() => {
+    if (!brushToggle) {
+      createObject(screenToGlobal(mousePos()));
+    } else {
+      destroyObject(screenToGlobal(mousePos()));
     }
   });
-  onKeyPress("=", () => {
-    camScale(camScale().add(1));
-  });
-  onKeyPress("-", () => {
-    if (camScale().sub(1).x > 0) {
-      camScale(camScale().sub(1));
-    }
+  onKeyPress("s", () => {
+    saveLevel();
   });
 })();
