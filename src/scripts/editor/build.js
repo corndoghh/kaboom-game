@@ -2792,11 +2792,34 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     }).then((response) => response.json()).then((response) => console.log(JSON.stringify(response)));
   };
 
+  // loadAssets.js
+  var loadAssets = () => {
+    loadSprite("block", "sprites/block.png");
+  };
+
+  // gui.js
+  var gui = class {
+    constructor(rect2, pos2, opacity2, hidden, f2) {
+      this.gui = add([
+        pos(pos2[0], pos2[1]),
+        rect(rect2[0], rect2[1]),
+        outline(1),
+        z(99),
+        opacity(opacity2)
+      ]);
+      this.gui.hidden = hidden;
+      this.gui.onClick(console.log("a"));
+    }
+    toggleGui() {
+      this.gui.hidden = !this.gui.hidden;
+    }
+  };
+
   // editor.js
   no({
     background: [0, 0, 0]
   });
-  load();
+  loadAssets();
   var brushToggle = false;
   onKeyPress("shift", () => {
     brushToggle = !brushToggle;
@@ -2810,5 +2833,14 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
   });
   onKeyPress("s", () => {
     saveLevel();
+  });
+  var brushes = new gui(
+    [width() - 40, 120],
+    [20, 20],
+    0.5,
+    true
+  );
+  onKeyPress("b", () => {
+    brushes.toggleGui();
   });
 })();
