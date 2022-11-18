@@ -11,7 +11,7 @@ export class Vec3 {
 
     multiplier(x) {this.pos.x *= x, this.pos.y *= x, this.pos.z *= x; this.update() }
 
-    add(vec3) { this.pos.x += vec3.pos.x; this.pos.z += vec3.pos.y; this.pos.z += vec3.pos.z; this.update() }
+    add(vec3) { this.pos.x += vec3.pos.x; this.pos.y += vec3.pos.y; this.pos.z += vec3.pos.z; this.update() }
 
     sub(vec3) { this.pos.x -= vec3.pos.x; this.pos.z -= vec3.pos.y; this.pos.z -= vec3.pos.z; this.update() }
 

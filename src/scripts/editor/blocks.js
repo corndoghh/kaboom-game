@@ -26,7 +26,7 @@ class block {
 
         let keys =[ ...blocks.keys() ];
         for (let i = 0; i < keys.length; i++) {
-            if (isEqual(keys[i], globalLocation)) { return }
+            if (isEqual(keys[i], globalLocation.pos)) { return }
         }
 
         this.image = image
@@ -39,7 +39,7 @@ class block {
             
         ])
 
-        blocks.set(globalLocation, this)
+        blocks.set(globalLocation.pos, this)
     }
 
 }
@@ -56,7 +56,7 @@ export const destroyObject = (vec3) => {
     let keys =[ ...blocks.keys() ];
     let block = undefined
     for (let i = 0; i < keys.length; i++) {
-        if (isEqual(keys[i], vec3)) { block = {f: blocks.get(keys[i]), s: keys[i]}; break;}
+        if (isEqual(keys[i], vec3.pos)) { block = {f: blocks.get(keys[i]), s: keys[i]}; break;}
     }
     if (block === undefined) { return; }
     //console.log("a")
@@ -64,6 +64,15 @@ export const destroyObject = (vec3) => {
     block.f = null
     blocks.delete(block.s)
     
+}
+
+export const updateBlockOpacity = (yLevel, opacity) => {
+    let keys =[...blocks.keys()]
+    for (let i = 0; i < keys.length; i++) {
+        console.log(keys[i].y)
+        if (keys[i].y <= yLevel-1) { blocks.get(keys[i]).sprite.opacity = 0; continue }  
+        if (keys[i].y == yLevel) { blocks.get(keys[i]).sprite.opacity = opacity }
+    }
 }
 
 export const createObject = (vec3) => { new block("block", vec3) }

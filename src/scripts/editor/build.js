@@ -2694,7 +2694,7 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     }
     add(vec3) {
       this.pos.x += vec3.pos.x;
-      this.pos.z += vec3.pos.y;
+      this.pos.y += vec3.pos.y;
       this.pos.z += vec3.pos.z;
       this.update();
     }
@@ -2744,7 +2744,7 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     constructor(image, globalLocation) {
       let keys = [...blocks.keys()];
       for (let i = 0; i < keys.length; i++) {
-        if (isEqual(keys[i], globalLocation)) {
+        if (isEqual(keys[i], globalLocation.pos)) {
           return;
         }
       }
@@ -2755,14 +2755,14 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
         pos(globalLocation.screenPos.x, globalLocation.screenPos.y),
         z(globalLocation.z)
       ]);
-      blocks.set(globalLocation, this);
+      blocks.set(globalLocation.pos, this);
     }
   };
   var destroyObject = (vec3) => {
     let keys = [...blocks.keys()];
     let block2 = void 0;
     for (let i = 0; i < keys.length; i++) {
-      if (isEqual(keys[i], vec3)) {
+      if (isEqual(keys[i], vec3.pos)) {
         block2 = { f: blocks.get(keys[i]), s: keys[i] };
         break;
       }
@@ -2773,6 +2773,19 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     block2.f.sprite.destroy();
     block2.f = null;
     blocks.delete(block2.s);
+  };
+  var updateBlockOpacity = (yLevel2, opacity2) => {
+    let keys = [...blocks.keys()];
+    for (let i = 0; i < keys.length; i++) {
+      console.log(keys[i].y);
+      if (keys[i].y <= yLevel2 - 1) {
+        blocks.get(keys[i]).sprite.opacity = 0;
+        continue;
+      }
+      if (keys[i].y == yLevel2) {
+        blocks.get(keys[i]).sprite.opacity = opacity2;
+      }
+    }
   };
   var createObject = (vec3) => {
     new block("block", vec3);
@@ -2795,23 +2808,65 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
   // loadAssets.js
   var loadAssets = () => {
     loadSprite("block", "sprites/block.png");
+    loadSprite("brush", "sprites/editor/brush.png");
+    loadSprite("bucket", "sprites/editor/bucket.png");
   };
 
   // gui.js
+  var inRegion = (target, vec2, optional) => {
+    if (optional === void 0) {
+      optional = true;
+    }
+    return vec2.x >= target.pos.x && vec2.x <= target.pos.x + target.width && vec2.y >= target.pos.y && vec2.y <= target.pos.y + target.height && optional;
+  };
   var gui = class {
-    constructor(rect2, pos2, opacity2, hidden, f2) {
+    constructor(rect2, pos2, opacity2, z1, hidden) {
       this.gui = add([
         pos(pos2[0], pos2[1]),
         rect(rect2[0], rect2[1]),
         outline(1),
-        z(99),
+        z(z1),
         opacity(opacity2)
       ]);
       this.gui.hidden = hidden;
-      this.gui.onClick(console.log("a"));
+      this.objs = /* @__PURE__ */ new Map();
+      onClick(() => {
+        if (!this.clicked(mousePos())) {
+          return;
+        }
+        [...this.objs.keys()].forEach((e) => {
+          const e2 = { pos: { x: e.pos.x - e.width / 2, y: e.pos.y - e.height / 2 }, width: e.width, height: e.height };
+          if (inRegion(e2, mousePos())) {
+            this.objs.get(e).call();
+          }
+        });
+      });
+    }
+    clicked(vec2) {
+      return inRegion(this.gui, vec2, !this.gui.hidden);
     }
     toggleGui() {
       this.gui.hidden = !this.gui.hidden;
+      [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden);
+    }
+    addObj(image, relativePos, functionCall) {
+      const obj = add([
+        sprite(image),
+        pos(this.gui.width * relativePos[0] / 100 + this.gui.pos.x, this.gui.height * relativePos[1] / 100 + this.gui.pos.y),
+        origin("center"),
+        z(this.gui.z + 1),
+        area()
+      ]);
+      obj.hidden = this.gui.hidden;
+      obj.scale = 0.2;
+      wait(0.1, () => {
+        obj.width *= 0.2;
+        obj.height *= 0.2;
+      });
+      this.objs.set(
+        obj,
+        functionCall
+      );
     }
   };
 
@@ -2820,27 +2875,44 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     background: [0, 0, 0]
   });
   loadAssets();
+  var tools = new gui(
+    [width() - 40, 120],
+    [20, 20],
+    0.5,
+    99,
+    true
+  );
+  tools.addObj("brush", [5, 50], () => console.log("brushing"));
+  tools.addObj("bucket", [20, 50], () => console.log("filling"));
   var brushToggle = false;
+  var yLevel = 0;
   onKeyPress("shift", () => {
     brushToggle = !brushToggle;
   });
   onMouseDown(() => {
+    if (tools.clicked(mousePos())) {
+      return;
+    }
+    const coords = screenToGlobal(mousePos());
+    coords.add(new Vec3(0, yLevel, 0));
     if (!brushToggle) {
-      createObject(screenToGlobal(mousePos()));
+      createObject(coords);
     } else {
-      destroyObject(screenToGlobal(mousePos()));
+      destroyObject(coords);
     }
   });
   onKeyPress("s", () => {
     saveLevel();
   });
-  var brushes = new gui(
-    [width() - 40, 120],
-    [20, 20],
-    0.5,
-    true
-  );
+  onKeyPress("=", () => {
+    updateBlockOpacity(yLevel, 0.4);
+    yLevel++;
+  });
+  onKeyPress("-", () => {
+    yLevel--;
+    updateBlockOpacity(yLevel, 1);
+  });
   onKeyPress("b", () => {
-    brushes.toggleGui();
+    tools.toggleGui();
   });
 })();
