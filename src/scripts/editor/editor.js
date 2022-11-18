@@ -20,15 +20,36 @@ const tools = new gui(
     true,
 )
 
-tools.addObj("brush", [5,50], () => console.log("brushing"))
-tools.addObj("bucket", [20,50], () => console.log("filling"))
+const changeTool = (tool) => {
+    if (tool === currentTool) return
+    currentTool = tool
 
-let brushToggle = false
+}
+
+const toolSet = ["brush", "bucket", "square", "circle", "rubber", "line"]
+let currentTool = toolSet[0]
+
+//adding the tools to the gui
+toolSet.forEach((e, i) => { tools.addObj(e, [(100/toolSet.length*0.5) * (2*i) + 8, 50], () => changeTool(e)) })
+// tools.addObj(toolSet[0], [(100/4*0.5) * (0+1) ,50], () => console.log("brushing"))
+// 1
+// tools.addObj(toolSet[1], [(100/4*0.5) * (0+1+2) ,50], () => console.log("filling"))
+// 3
+// // tools.addObj(toolSet[0], [55,50], () => console.log("filling"))
+
+// tools.addObj(toolSet[1], [(100/4*0.5)*(0+2+3),50], () => console.log("filling"))
+// 5
+// tools.addObj(toolSet[0], [(100/4*0.5)*(0+3+4),50], () => console.log("filling"))
+// 7
+
+// -2+2n
+
+
 let yLevel = 0
 
-onKeyPress("shift", () => { brushToggle = !brushToggle })
+onKeyPress("shift", () => { if (currentTool == "brush") { currentTool = "rubber" } else if (currentTool == "rubber") { currentTool = "brush" } })
 
-//click loop
+//Painting canvis
 onMouseDown(() => {
 
     if (tools.clicked(mousePos())) { return }
@@ -36,17 +57,19 @@ onMouseDown(() => {
     const coords = screenToGlobal(mousePos())
     //console.log(coords.z)
     coords.add(new Vec3(0, yLevel, 0))
-    //coords.screenPos.y += (32 * yLevel)
-    //coords.z += yLevel+(1 * yLevel)
-    //console.log(coords.z)
+
+    console.log(currentTool)
+    switch (currentTool)
+    {
+        case "brush": createObject(coords); break
+        case "bucket": break
+        case "square": break
+        case "circle": break
+        case "rubber": destroyObject(coords); break
+        case "line": break
+    }
 
 
-    if (!brushToggle) { 
-        createObject(coords)
-    }
-    else {
-        destroyObject(coords)
-    }
 })
 
 onKeyPress("s", () => {

@@ -2810,6 +2810,10 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     loadSprite("block", "sprites/block.png");
     loadSprite("brush", "sprites/editor/brush.png");
     loadSprite("bucket", "sprites/editor/bucket.png");
+    loadSprite("square", "sprites/editor/square.png");
+    loadSprite("circle", "sprites/editor/circle.png");
+    loadSprite("line", "sprites/editor/line.png");
+    loadSprite("rubber", "sprites/editor/rubber.png");
   };
 
   // gui.js
@@ -2882,12 +2886,23 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     99,
     true
   );
-  tools.addObj("brush", [5, 50], () => console.log("brushing"));
-  tools.addObj("bucket", [20, 50], () => console.log("filling"));
-  var brushToggle = false;
+  var changeTool = (tool) => {
+    if (tool === currentTool)
+      return;
+    currentTool = tool;
+  };
+  var toolSet = ["brush", "bucket", "square", "circle", "rubber", "line"];
+  var currentTool = toolSet[0];
+  toolSet.forEach((e, i) => {
+    tools.addObj(e, [100 / toolSet.length * 0.5 * (2 * i) + 8, 50], () => changeTool(e));
+  });
   var yLevel = 0;
   onKeyPress("shift", () => {
-    brushToggle = !brushToggle;
+    if (currentTool == "brush") {
+      currentTool = "rubber";
+    } else if (currentTool == "rubber") {
+      currentTool = "brush";
+    }
   });
   onMouseDown(() => {
     if (tools.clicked(mousePos())) {
@@ -2895,10 +2910,22 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     }
     const coords = screenToGlobal(mousePos());
     coords.add(new Vec3(0, yLevel, 0));
-    if (!brushToggle) {
-      createObject(coords);
-    } else {
-      destroyObject(coords);
+    console.log(currentTool);
+    switch (currentTool) {
+      case "brush":
+        createObject(coords);
+        break;
+      case "bucket":
+        break;
+      case "square":
+        break;
+      case "circle":
+        break;
+      case "rubber":
+        destroyObject(coords);
+        break;
+      case "line":
+        break;
     }
   });
   onKeyPress("s", () => {
