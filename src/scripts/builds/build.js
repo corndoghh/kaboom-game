@@ -2695,19 +2695,50 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     }
   };
 
+  // classes/vec3.js
+  var grid = 25;
+  var Vec3 = class {
+    constructor(x, y, z3) {
+      this.pos = { x, y, z: z3 };
+      this.update();
+    }
+    multiplier(x) {
+      this.pos.x *= x, this.pos.y *= x, this.pos.z *= x;
+      this.update();
+    }
+    add(x, y, z3) {
+      this.pos.x += x;
+      this.pos.y += y;
+      this.pos.z += z3;
+      this.update();
+    }
+    sub(vec3) {
+      this.pos.x -= vec3.pos.x;
+      this.pos.z -= vec3.pos.y;
+      this.pos.z -= vec3.pos.z;
+      this.update();
+    }
+    update() {
+      this.z = this.pos.x + this.pos.y + this.pos.z;
+      this.screenPos = { x: (this.pos.x - this.pos.z) * 32 + width() / 2 - 32, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 * 32 + height() / 2 - (grid + grid) * 8 };
+    }
+    print() {
+      console.log(this.pos);
+    }
+  };
+
   // levelLoader.js
   var loader = async () => {
-    const response = await fetch("/load", {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ "file": "level" })
-    });
+    const response = await fetch("/levels/level.json");
     const data = await response.json();
-    [...data.body].forEach((e) => {
-      new block(e.image, e.pos);
+    loadSprite("static", "/levels/image.png");
+    [...data].forEach((e) => {
+      new block(e.image, new Vec3(e.pos.x, e.pos.y, e.pos.z));
+    });
+    wait(0.1, () => {
+      const staticImage = add([
+        sprite("static")
+      ]);
     });
   };
 

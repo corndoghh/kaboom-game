@@ -9,10 +9,14 @@ app.listen(PORT, () => {
     console.log("Listening on port: " + PORT)
 })
 
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb'}));
 app.use("/scripts", express.static(path.join(__dirname, "/src/scripts")))
 app.use("/sounds", express.static(path.join(__dirname, "/src/sounds")))
 app.use("/sprites", express.static(path.join(__dirname, "/src/sprites")))
 app.use("/class", express.static(path.join(__dirname, "src/scripts/classes")))
+app.use("/levels", express.static(path.join(__dirname, "src/levels")))
+
 
 
 app.use(express.json());
@@ -26,10 +30,30 @@ app.get("/editor", (_req, res) => {
     res.sendFile(path.join(__dirname, "/levelEditor.html"))
 })
 
+app.get("/gg", (_req, res) => {
+    res.sendFile(path.join(__dirname, "/gg.html"))
+})
+
 app.post("/save", (req, res) => {
     //console.log(req.body[0])
-    var jsonContent = JSON.stringify(req.body);
-    fs.writeFile("src/levels/level.json", jsonContent, 'utf8', function (err) {
+    const blocks = JSON.stringify(req.body.blocks);
+    const urlData = JSON.stringify(req.body.image);
+
+
+
+    var dataurl= urlData.split('"')[1]
+    console.log(dataurl)
+    var regex = /^data:.+\/(.+);base64,(.*)$/;
+    var matches = dataurl.match(regex);
+    console.log(matches)
+    var ext = matches[1];
+    var data = matches[2];
+    var buffer = Buffer.from(data, 'base64');
+    fs.writeFileSync('src/levels/image.' + ext, buffer);
+
+
+
+    fs.writeFile("src/levels/level.json", blocks, 'utf8', function (err) {
         if (err) {
             console.log("An error occured while writing JSON Object to File.");
             return console.log(err);
@@ -43,15 +67,22 @@ app.post("/save", (req, res) => {
 
 })
 
-app.post("/load", (req, res) => {
-    const file = req.body.file;
-    const data = fs.readFileSync(`src/levels/${file}.json`)
-    const json = JSON.parse(data);
-    console.log(json)
-    res.send({
-        body: json
-    })
-})
+// app.post("/load", (req, res) => {
+//     const file = req.body.file;
+//     const data = fs.readFileSync(`src/levels/${file}.json`)
+//     const image = fs.readFileSync(`src/levels/image.png`)
+//     const buffer = Buffer.from(image, 'base64');
+//     console.log(buffer)
+//     const json = JSON.parse(data);
+//     console.log(json)
+//     res.send({
+//         body: {
+//             blocks: json,
+//             image: buffer
+
+//         }
+//     })
+// })
 
 // app.get("/level", (_req, res) => {
 //     res.sendFile(path.join(__dirname, "/level.html"))

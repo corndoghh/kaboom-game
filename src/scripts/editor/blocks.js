@@ -1,10 +1,11 @@
 
 import { Vec3 } from "../game/classes/vec3";
+import { toggleReal } from "./editor";
 
 const blocks = new Map()
 
 
-function isEqual(obj1, obj2) {
+export function isEqual(obj1, obj2) {
     var props1 = Object.getOwnPropertyNames(obj1);
     var props2 = Object.getOwnPropertyNames(obj2); if (props1.length != props2.length) {
         return false;
@@ -22,7 +23,7 @@ function isEqual(obj1, obj2) {
 
 
 class block {
-    constructor(image, globalLocation) {
+    constructor(image, globalLocation, real) {
 
         let keys =[ ...blocks.keys() ];
         for (let i = 0; i < keys.length; i++) {
@@ -31,6 +32,8 @@ class block {
 
         this.image = image
         this.globalLocation = globalLocation;
+        this.real = real;
+        
 
         this.sprite = add([
             sprite(image),
@@ -75,27 +78,47 @@ export const updateBlockOpacity = (yLevel, opacity) => {
     }
 }
 
-export const createObject = (vec3) => { new block("block", vec3) }
+export const isOccupied = (coords) => {
+    let returnVal = false;
+    let keys = [...blocks.keys()]
+    //console.log(keys)
+    for (let i = 0; i < keys.length; i++) {
+        console.log(coords.pos)
+        if (isEqual(keys[i], coords.pos)) { returnVal = true; console.log(keys[i], coords); break; }
+    }
+    return returnVal
+}
+
+export const createObject = (vec3) => { new block("block", vec3, toggleReal) }
 
 export const saveLevel = () => {
+
+    [...blocks.values() ].forEach((e) => {
+        if (e.real) { e.sprite.opacity = 0 } else { e.sprite.opacity = 1 }
+    })
 
     const savedBlocks = [];
 
 
     [ ...blocks.values() ].forEach((ob) => {
-        savedBlocks.push({pos: ob.globalLocation, image: ob.image})
+        if (ob.real) { savedBlocks.push({pos: ob.globalLocation.pos, image: ob.image}) }
     })
 
-    fetch('/save', {
-    method: 'POST',
-    headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(savedBlocks)
-})
-.then(response => response.json())
-.then(response => console.log(JSON.stringify(response)))
+    wait (0.1, () => {
+        fetch('/save', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({image: screenshot(), blocks: savedBlocks })
+        })
+        .then(response => response.json())
+    });
+
+    [...blocks.values() ].forEach((e) => {
+       e.sprite.opacity = 1 
+    })
 
 
 }

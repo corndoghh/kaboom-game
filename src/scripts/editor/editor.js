@@ -1,5 +1,5 @@
 import kaboom from "kaboom";
-import { destroyObject, createObject, saveLevel, updateBlockOpacity } from "./blocks"
+import { destroyObject, createObject, saveLevel, updateBlockOpacity, isOccupied, isEqual } from "./blocks"
 import { loadAssets } from "./loadAssets"
 import { screenToGlobal } from "../game/classes/vec3"
 import { gui } from "./gui"
@@ -20,7 +20,31 @@ const tools = new gui(
     true,
 )
 
+export let toggleReal = false;
+
+const floodFill = (tempCoords) => {
+    const coords = new Vec3(tempCoords.pos.x, tempCoords.pos.y, tempCoords.pos.z)
+
+    let hit = false
+    while (!hit) {
+        if (isOccupied(coords) || (coords.screenPos.x > width() || coords.screenPos.y > height() || coords.screenPos.x < 0 || coords.screenPos.y < 0)) { hit = true; break }
+        createObject(structuredClone(coords))
+        coords.add(1,0,0)
+    }
+
+}
+
+const createCircle = (radius, pos) => {
+    for (let i = pos.x; i < radius+pos.x; i++) {
+        for (let j = pos.z; j < radius+pos.z; j++) {
+            createObject(new Vec3(i, yLevel, j))
+        }
+
+    }
+}
+
 const changeTool = (tool) => {
+    lastMouseCoords = new Vec3(0,0,0)
     if (tool === currentTool) return
     currentTool = tool
 
@@ -46,25 +70,32 @@ toolSet.forEach((e, i) => { tools.addObj(e, [(100/toolSet.length*0.5) * (2*i) + 
 
 
 let yLevel = 0
+let lastMouseCoords = new Vec3(0,0,0)
 
-onKeyPress("shift", () => { if (currentTool == "brush") { currentTool = "rubber" } else if (currentTool == "rubber") { currentTool = "brush" } })
+onKeyPress("shift", () => { if (currentTool == "brush") { changeTool("rubber") } else if (currentTool == "rubber") { changeTool("brush") } })
+
 
 //Painting canvis
 onMouseDown(() => {
+
 
     if (tools.clicked(mousePos())) { return }
 
     const coords = screenToGlobal(mousePos())
     //console.log(coords.z)
-    coords.add(new Vec3(0, yLevel, 0))
+    coords.add(0, yLevel, 0)
 
-    console.log(currentTool)
+    if (isEqual(lastMouseCoords, coords)) { return }
+    lastMouseCoords = coords
+    console.log("a")
+
+
     switch (currentTool)
     {
         case "brush": createObject(coords); break
-        case "bucket": break
+        case "bucket": floodFill({...coords}); break
         case "square": break
-        case "circle": break
+        case "circle": createCircle(5, coords.pos); break
         case "rubber": destroyObject(coords); break
         case "line": break
     }
@@ -89,3 +120,8 @@ onKeyPress("-", () => {
 onKeyPress("b", () => {
     tools.toggleGui()
 })
+
+onKeyPress("g", () => {
+    toggleReal = !toggleReal
+})
+

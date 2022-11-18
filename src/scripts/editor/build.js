@@ -2692,10 +2692,10 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       this.pos.x *= x, this.pos.y *= x, this.pos.z *= x;
       this.update();
     }
-    add(vec3) {
-      this.pos.x += vec3.pos.x;
-      this.pos.y += vec3.pos.y;
-      this.pos.z += vec3.pos.z;
+    add(x, y, z3) {
+      this.pos.x += x;
+      this.pos.y += y;
+      this.pos.z += z3;
       this.update();
     }
     sub(vec3) {
@@ -2707,6 +2707,9 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     update() {
       this.z = this.pos.x + this.pos.y + this.pos.z;
       this.screenPos = { x: (this.pos.x - this.pos.z) * 32 + width() / 2 - 32, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 * 32 + height() / 2 - (grid + grid) * 8 };
+    }
+    print() {
+      console.log(this.pos);
     }
   };
   var screenToGlobal = (vec2) => {
@@ -2741,7 +2744,7 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     return object != null && typeof object === "object";
   }
   var block = class {
-    constructor(image, globalLocation) {
+    constructor(image, globalLocation, real) {
       let keys = [...blocks.keys()];
       for (let i = 0; i < keys.length; i++) {
         if (isEqual(keys[i], globalLocation.pos)) {
@@ -2750,6 +2753,7 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       }
       this.image = image;
       this.globalLocation = globalLocation;
+      this.real = real;
       this.sprite = add([
         sprite(image),
         pos(globalLocation.screenPos.x, globalLocation.screenPos.y),
@@ -2787,22 +2791,49 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       }
     }
   };
+  var isOccupied = (coords) => {
+    let returnVal = false;
+    let keys = [...blocks.keys()];
+    for (let i = 0; i < keys.length; i++) {
+      console.log(coords.pos);
+      if (isEqual(keys[i], coords.pos)) {
+        returnVal = true;
+        console.log(keys[i], coords);
+        break;
+      }
+    }
+    return returnVal;
+  };
   var createObject = (vec3) => {
-    new block("block", vec3);
+    new block("block", vec3, toggleReal);
   };
   var saveLevel = () => {
+    [...blocks.values()].forEach((e) => {
+      if (e.real) {
+        e.sprite.opacity = 0;
+      } else {
+        e.sprite.opacity = 1;
+      }
+    });
     const savedBlocks = [];
     [...blocks.values()].forEach((ob) => {
-      savedBlocks.push({ pos: ob.globalLocation, image: ob.image });
+      if (ob.real) {
+        savedBlocks.push({ pos: ob.globalLocation.pos, image: ob.image });
+      }
     });
-    fetch("/save", {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(savedBlocks)
-    }).then((response) => response.json()).then((response) => console.log(JSON.stringify(response)));
+    wait(0.1, () => {
+      fetch("/save", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ image: screenshot(), blocks: savedBlocks })
+      }).then((response) => response.json());
+    });
+    [...blocks.values()].forEach((e) => {
+      e.sprite.opacity = 1;
+    });
   };
 
   // loadAssets.js
@@ -2886,7 +2917,28 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     99,
     true
   );
+  var toggleReal = false;
+  var floodFill = (tempCoords) => {
+    const coords = new Vec3(tempCoords.pos.x, tempCoords.pos.y, tempCoords.pos.z);
+    let hit = false;
+    while (!hit) {
+      if (isOccupied(coords) || (coords.screenPos.x > width() || coords.screenPos.y > height() || coords.screenPos.x < 0 || coords.screenPos.y < 0)) {
+        hit = true;
+        break;
+      }
+      createObject(structuredClone(coords));
+      coords.add(1, 0, 0);
+    }
+  };
+  var createCircle = (radius, pos2) => {
+    for (let i = pos2.x; i < radius + pos2.x; i++) {
+      for (let j = pos2.z; j < radius + pos2.z; j++) {
+        createObject(new Vec3(i, yLevel, j));
+      }
+    }
+  };
   var changeTool = (tool) => {
+    lastMouseCoords = new Vec3(0, 0, 0);
     if (tool === currentTool)
       return;
     currentTool = tool;
@@ -2897,11 +2949,12 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
     tools.addObj(e, [100 / toolSet.length * 0.5 * (2 * i) + 8, 50], () => changeTool(e));
   });
   var yLevel = 0;
+  var lastMouseCoords = new Vec3(0, 0, 0);
   onKeyPress("shift", () => {
     if (currentTool == "brush") {
-      currentTool = "rubber";
+      changeTool("rubber");
     } else if (currentTool == "rubber") {
-      currentTool = "brush";
+      changeTool("brush");
     }
   });
   onMouseDown(() => {
@@ -2909,17 +2962,23 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
       return;
     }
     const coords = screenToGlobal(mousePos());
-    coords.add(new Vec3(0, yLevel, 0));
-    console.log(currentTool);
+    coords.add(0, yLevel, 0);
+    if (isEqual(lastMouseCoords, coords)) {
+      return;
+    }
+    lastMouseCoords = coords;
+    console.log("a");
     switch (currentTool) {
       case "brush":
         createObject(coords);
         break;
       case "bucket":
+        floodFill({ ...coords });
         break;
       case "square":
         break;
       case "circle":
+        createCircle(5, coords.pos);
         break;
       case "rubber":
         destroyObject(coords);
@@ -2941,5 +3000,8 @@ vec4 frag(vec3 pos, vec2 uv, vec4 color, sampler2D tex) {
   });
   onKeyPress("b", () => {
     tools.toggleGui();
+  });
+  onKeyPress("g", () => {
+    toggleReal = !toggleReal;
   });
 })();
