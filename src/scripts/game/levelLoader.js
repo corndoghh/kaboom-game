@@ -1,6 +1,6 @@
 import { block } from "./classes/object"
 import { Vec3 } from "./classes/vec3"
-export const loader = async () => {
+export const loader = async (level) => {
     const response = await fetch("/levels/level.json")
     const data = await response.json();
     loadSprite("static", "/levels/image.png");
@@ -23,9 +23,16 @@ export const loader = async () => {
 
 
     wait(0.1, () => {
+        
         const staticImage = add([
-            sprite("static")
+            sprite("static"),
+            pos(0,0)
         ])
+        wait(0.2, () => {
+            staticImage.pos.x -= (staticImage.width - width()) 
+            staticImage.pos.y -= (staticImage.height - height())
+        })
+
     })
 }
 

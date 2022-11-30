@@ -26,7 +26,7 @@ app.get("/", (_req, res) => {
     res.sendFile(path.join(__dirname, "/page.html"))
 })
 
-app.get("/editor", (_req, res) => {
+app.get("/editor", async (_req, res) => {
     res.sendFile(path.join(__dirname, "/levelEditor.html"))
 })
 

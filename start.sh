@@ -1,13 +1,13 @@
 cd src/scripts/game
 
-esbuild game.js --bundle > build.js
+esbuild game.js --bundle --format=esm > build.js
 
 mv build.js ../builds/
 
 
 cd ..
 cd editor
-esbuild editor.js --bundle > build.js
+esbuild editor.js --bundle --format=esm > build.js
 
 
 

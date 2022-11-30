@@ -113,12 +113,10 @@ export const saveLevel = () => {
             },
             body: JSON.stringify({image: screenshot(), blocks: savedBlocks })
         })
-        .then(response => response.json())
+        .then([...blocks.values() ].forEach((e) => {
+            e.sprite.opacity = 1 
+         }))
     });
-
-    [...blocks.values() ].forEach((e) => {
-       e.sprite.opacity = 1 
-    })
 
 
 }

@@ -6,9 +6,14 @@ kaboom({
     background: [0,0,0]
 })
 
+focus()
+
+
 loadAssets()
 
 loader()
+
+
 
 
 

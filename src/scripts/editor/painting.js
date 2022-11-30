@@ -1,27 +1,3 @@
-import kaboom from "kaboom";
-import { destroyObject, createObject, saveLevel, updateBlockOpacity, isOccupied, isEqual } from "./blocks"
-import { loadAssets } from "./loadAssets"
-import { screenToGlobal } from "../game/classes/vec3"
-import { gui } from "./gui"
-import { Vec3 } from "../game/classes/vec3"
-import { selectorScreen } from "./levelSelector"
-
-kaboom({
-    background: [0,0,0]
-})
-
-loadAssets()
-
-focus()
-
-const level = await selectorScreen();
-
-// console.log(level)
-
-if (!level.new) { level.rawBlockData.forEach((x) => { createObject(new Vec3(x.coords.x, x.coords.y, x.coords.z)) }) }
-
-
- 
 const tools = new gui(
     [width() - 40, 120],
     [20, 20],
