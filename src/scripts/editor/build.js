@@ -1,3 +1,9 @@
+var __defProp = Object.defineProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
 // ../../../node_modules/kaboom/dist/kaboom.mjs
 var ir = Object.defineProperty;
 var Hi = Object.defineProperties;
@@ -2814,12 +2820,12 @@ var saveLevel = () => {
       e.sprite.opacity = 1;
     }
   });
-  const savedBlocks = [];
-  [...blocks.values()].forEach((ob) => {
+  const savedBlocks = [...blocks.values()].map((ob) => {
     if (ob.real) {
-      savedBlocks.push({ pos: ob.globalLocation.pos, image: ob.image });
+      return { pos: ob.globalLocation.pos, image: ob.image };
     }
-  });
+  }).filter((x) => x != void 0);
+  console.log(savedBlocks);
   wait(0.1, () => {
     fetch("/save", {
       method: "POST",
@@ -2882,16 +2888,21 @@ var gui = class {
     this.gui.hidden = !this.gui.hidden;
     [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden);
   }
-  addObj(image, relativePos, functionCall) {
+  addObj(displayed, relativePos, scale, functionCall, isText) {
+    if (isText == void 0) {
+      isText = false;
+    }
+    console.log(displayed);
     const obj = add([
-      sprite(image),
+      displayed,
       pos(this.gui.width * relativePos[0] / 100 + this.gui.pos.x, this.gui.height * relativePos[1] / 100 + this.gui.pos.y),
       origin("center"),
       z(this.gui.z + 1),
       area()
     ]);
+    console.log(obj.pos);
     obj.hidden = this.gui.hidden;
-    obj.scale = 0.2;
+    obj.scale = scale;
     wait(0.1, () => {
       obj.width *= 0.2;
       obj.height *= 0.2;
@@ -2901,10 +2912,34 @@ var gui = class {
       functionCall
     );
   }
+  remove() {
+    this.gui.destroy();
+    [...this.objs.keys()].forEach((x) => x.destroy());
+  }
+};
+
+// ../game/classes/functions.js
+var functions_exports = {};
+__export(functions_exports, {
+  input: () => input2
+});
+var input2 = async (textBox) => {
+  return new Promise((r, _j) => {
+    let inputVal = "";
+    onCharInput((char) => {
+      onKeyPress("enter", () => {
+        r(inputVal);
+      });
+      inputVal += char;
+      textBox = inputVal;
+    });
+  });
 };
 
 // levelSelector.js
+Object.entries(functions_exports).forEach(([funName, exported]) => window[funName] = exported);
 var selectorScreen = async () => {
+  document.title = "Level selector";
   const selector = new gui(
     [width() - 40 * 8, height() - 40 * 5],
     [20 * 8, 20 * 5],
@@ -2912,15 +2947,21 @@ var selectorScreen = async () => {
     99,
     false
   );
-  const keyPress = new Promise((resolve, reject) => {
+  selector.addObj(text("Level Selector"), [50, -7], 1, () => console.log("bob"), true);
+  selector.addObj(text("New", { font: "sink", size: 48 }), [50, 90], 1, async () => {
+    const text2 = await input();
+    console.log(text2);
+  }, true);
+  const keyPress = await new Promise((resolve, _reject) => {
     onKeyDown("v", () => {
-      console.log("x");
       resolve({
         new: false,
+        session: "x",
         rawBlockData: [{ coords: { x: 10, y: 0, z: 10 } }]
       });
     });
   });
+  selector.remove();
   return keyPress;
 };
 
@@ -2972,7 +3013,7 @@ var changeTool = (tool) => {
 var toolSet = ["brush", "bucket", "square", "circle", "rubber", "line"];
 var currentTool = toolSet[0];
 toolSet.forEach((e, i) => {
-  tools.addObj(e, [100 / toolSet.length * 0.5 * (2 * i) + 8, 50], () => changeTool(e));
+  tools.addObj(sprite(e), [100 / toolSet.length * 0.5 * (2 * i) + 8, 50], 0.2, () => changeTool(e));
 });
 var yLevel = 0;
 var lastMouseCoords = new Vec3(0, 0, 0);

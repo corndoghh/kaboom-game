@@ -2728,21 +2728,19 @@ var Vec3 = class {
 
 // levelLoader.js
 var loader = async (level) => {
+  loadSprite("static", "/levels/image.png");
   const response = await fetch("/levels/level.json");
   const data = await response.json();
-  loadSprite("static", "/levels/image.png");
+  const staticImage = add([
+    sprite("static"),
+    pos(0, 0)
+  ]);
+  wait(0.01, () => {
+    staticImage.pos.x -= staticImage.width - width();
+    staticImage.pos.y -= staticImage.height - height();
+  });
   [...data].forEach((e) => {
     new block(e.image, new Vec3(e.pos.x, e.pos.y, e.pos.z));
-  });
-  wait(0.1, () => {
-    const staticImage = add([
-      sprite("static"),
-      pos(0, 0)
-    ]);
-    wait(0.2, () => {
-      staticImage.pos.x -= staticImage.width - width();
-      staticImage.pos.y -= staticImage.height - height();
-    });
   });
 };
 

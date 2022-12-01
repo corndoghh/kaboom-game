@@ -1,4 +1,5 @@
 
+import kaboom from "kaboom";
 import { Vec3 } from "../game/classes/vec3";
 import { toggleReal } from "./editor";
 
@@ -97,12 +98,12 @@ export const saveLevel = () => {
         if (e.real) { e.sprite.opacity = 0 } else { e.sprite.opacity = 1 }
     })
 
-    const savedBlocks = [];
 
+    const savedBlocks = [ ...blocks.values() ].map((ob) => {
+        if (ob.real) { return {pos: ob.globalLocation.pos, image: ob.image} }
+    }).filter(x => x != undefined)
 
-    [ ...blocks.values() ].forEach((ob) => {
-        if (ob.real) { savedBlocks.push({pos: ob.globalLocation.pos, image: ob.image}) }
-    })
+    console.log(savedBlocks)
 
     wait (0.1, () => {
         fetch('/save', {

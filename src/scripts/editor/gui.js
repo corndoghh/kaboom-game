@@ -9,7 +9,7 @@ export const inRegion = (target, vec2, optional) => {
         // ) 
     return (vec2.x >= target.pos.x && vec2.x <= target.pos.x + target.width && vec2.y >= target.pos.y && vec2.y <= target.pos.y + target.height) && optional
 }
-
+// ) 
 
 
 export class gui {
@@ -43,16 +43,20 @@ export class gui {
     toggleGui() { this.gui.hidden = !this.gui.hidden; [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden) }
 
 
-    addObj(image, relativePos, functionCall) {
+    addObj(displayed, relativePos, scale, functionCall, isText) {
+        if (isText == undefined) { isText = false; }
+    
+        console.log(displayed)
         const obj = add([
-            sprite(image),
+            displayed,
             pos((this.gui.width * relativePos[0] / 100) + this.gui.pos.x, (this.gui.height * relativePos[1] / 100) + this.gui.pos.y),
             origin("center"),
             z(this.gui.z+1),
-            area()
+            area()            
         ])
+        console.log(obj.pos)
         obj.hidden = this.gui.hidden
-        obj.scale = 0.2
+        obj.scale = scale
         wait(0.1, () => {
             obj.width *= 0.2
             obj.height *= 0.2
@@ -64,6 +68,12 @@ export class gui {
             obj, functionCall
         )
 
+    }
+
+    remove() {
+        this.gui.destroy();
+
+        [...this.objs.keys()].forEach((x) => x.destroy())
     }
 }
 

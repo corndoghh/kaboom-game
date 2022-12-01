@@ -64,7 +64,7 @@ const toolSet = ["brush", "bucket", "square", "circle", "rubber", "line"]
 let currentTool = toolSet[0]
 
 //adding the tools to the gui
-toolSet.forEach((e, i) => { tools.addObj(e, [(100/toolSet.length*0.5) * (2*i) + 8, 50], () => changeTool(e)) })
+toolSet.forEach((e, i) => { tools.addObj(sprite(e), [(100/toolSet.length*0.5) * (2*i) + 8, 50], 0.2, () => changeTool(e)) })
 // tools.addObj(toolSet[0], [(100/4*0.5) * (0+1) ,50], () => console.log("brushing"))
 // 1
 // tools.addObj(toolSet[1], [(100/4*0.5) * (0+1+2) ,50], () => console.log("filling"))
