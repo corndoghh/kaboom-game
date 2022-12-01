@@ -5,6 +5,19 @@ import { toggleReal } from "./editor";
 
 const blocks = new Map()
 
+const getCircularReplacer = () => {
+    const seen = new WeakSet();
+    return (key, value) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) {
+          return;
+        }
+        seen.add(value);
+      }
+      return value;
+    };
+  };
+  
 
 export function isEqual(obj1, obj2) {
     var props1 = Object.getOwnPropertyNames(obj1);
@@ -92,18 +105,21 @@ export const isOccupied = (coords) => {
 
 export const createObject = (vec3) => { new block("block", vec3, toggleReal) }
 
-export const saveLevel = () => {
+export const saveLevel = (session) => {
 
-    [...blocks.values() ].forEach((e) => {
+    const blocksValues = [...blocks.values()];
+
+    blocksValues.forEach((e) => {
         if (e.real) { e.sprite.opacity = 0 } else { e.sprite.opacity = 1 }
     })
 
 
-    const savedBlocks = [ ...blocks.values() ].map((ob) => {
-        if (ob.real) { return {pos: ob.globalLocation.pos, image: ob.image} }
-    }).filter(x => x != undefined)
+    const rawBlockData = blocksValues.map((ob) => { return {pos: ob.globalLocation.pos, image: ob.image, real: ob.real}})
 
-    console.log(savedBlocks)
+    const savedBlocks = rawBlockData.filter((x) => x.real)
+
+
+    console.log(rawBlockData, savedBlocks)
 
     wait (0.1, () => {
         fetch('/save', {
@@ -112,9 +128,9 @@ export const saveLevel = () => {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({image: screenshot(), blocks: savedBlocks })
+            body: JSON.stringify({session, image: screenshot(), blocks: savedBlocks, rawBlockData }, getCircularReplacer())
         })
-        .then([...blocks.values() ].forEach((e) => {
+        .then(blocksValues.forEach((e) => {
             e.sprite.opacity = 1 
          }))
     });

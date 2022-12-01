@@ -2729,6 +2729,18 @@ var screenToGlobal = (vec2) => {
 
 // blocks.js
 var blocks = /* @__PURE__ */ new Map();
+var getCircularReplacer = () => {
+  const seen = /* @__PURE__ */ new WeakSet();
+  return (key, value) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  };
+};
 function isEqual(obj1, obj2) {
   var props1 = Object.getOwnPropertyNames(obj1);
   var props2 = Object.getOwnPropertyNames(obj2);
@@ -2812,20 +2824,20 @@ var isOccupied = (coords) => {
 var createObject = (vec3) => {
   new block("block", vec3, toggleReal);
 };
-var saveLevel = () => {
-  [...blocks.values()].forEach((e) => {
+var saveLevel = (session2) => {
+  const blocksValues = [...blocks.values()];
+  blocksValues.forEach((e) => {
     if (e.real) {
       e.sprite.opacity = 0;
     } else {
       e.sprite.opacity = 1;
     }
   });
-  const savedBlocks = [...blocks.values()].map((ob) => {
-    if (ob.real) {
-      return { pos: ob.globalLocation.pos, image: ob.image };
-    }
-  }).filter((x) => x != void 0);
-  console.log(savedBlocks);
+  const rawBlockData = blocksValues.map((ob) => {
+    return { pos: ob.globalLocation.pos, image: ob.image, real: ob.real };
+  });
+  const savedBlocks = rawBlockData.filter((x) => x.real);
+  console.log(rawBlockData, savedBlocks);
   wait(0.1, () => {
     fetch("/save", {
       method: "POST",
@@ -2833,8 +2845,8 @@ var saveLevel = () => {
         "Accept": "application/json",
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ image: screenshot(), blocks: savedBlocks })
-    }).then([...blocks.values()].forEach((e) => {
+      body: JSON.stringify({ session: session2, image: screenshot(), blocks: savedBlocks, rawBlockData }, getCircularReplacer())
+    }).then(blocksValues.forEach((e) => {
       e.sprite.opacity = 1;
     }));
   });
@@ -2859,16 +2871,19 @@ var inRegion = (target, vec2, optional) => {
   return vec2.x >= target.pos.x && vec2.x <= target.pos.x + target.width && vec2.y >= target.pos.y && vec2.y <= target.pos.y + target.height && optional;
 };
 var gui = class {
-  constructor(rect2, pos2, opacity2, z1, hidden) {
+  constructor(rect2, pos2, opacity2, z1, hidden, colour) {
     this.gui = add([
       pos(pos2[0], pos2[1]),
       rect(rect2[0], rect2[1]),
       outline(1),
       z(z1),
+      colour,
       opacity(opacity2)
     ]);
     this.gui.hidden = hidden;
+    this.layers = /* @__PURE__ */ new Map();
     this.objs = /* @__PURE__ */ new Map();
+    this.layers.set("gui", this.gui);
     onClick(() => {
       if (!this.clicked(mousePos())) {
         return;
@@ -2884,33 +2899,46 @@ var gui = class {
   clicked(vec2) {
     return inRegion(this.gui, vec2, !this.gui.hidden);
   }
+  addLayer(name, rectSize, coords, colour, outline2) {
+    const layer = add([
+      pos(this.gui.width * coords[0] / 100 + this.gui.pos.x, this.gui.height * coords[1] / 100 + this.gui.pos.y),
+      rect(this.gui.width * rectSize[0] / 100, this.gui.height * rectSize[1] / 100),
+      colour,
+      outline2
+    ]);
+    this.layers.set(name, layer);
+  }
   toggleGui() {
     this.gui.hidden = !this.gui.hidden;
     [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden);
+    [...this.layers.keys()].forEach((e) => e.hidden = this.gui.hidden);
   }
-  addObj(displayed, relativePos, scale, functionCall, isText) {
-    if (isText == void 0) {
-      isText = false;
-    }
+  addObjFull(obj, functionCall, parentLayer = "gui") {
+    const layer = this.layers.get(parentLayer);
+    obj.pos.x = layer.width * obj.pos.x / 100 + layer.pos.x;
+    obj.pos.y = layer.height * obj.pos.y / 100 + layer.pos.y;
+    this.objs.set(
+      obj,
+      functionCall
+    );
+  }
+  addObj(displayed, relativePos, scale2, functionCall, isText = false) {
     console.log(displayed);
     const obj = add([
       displayed,
-      pos(this.gui.width * relativePos[0] / 100 + this.gui.pos.x, this.gui.height * relativePos[1] / 100 + this.gui.pos.y),
+      pos(relativePos[0], relativePos[1]),
       origin("center"),
       z(this.gui.z + 1),
       area()
     ]);
     console.log(obj.pos);
     obj.hidden = this.gui.hidden;
-    obj.scale = scale;
-    wait(0.1, () => {
+    obj.scale = scale2;
+    wait(0.01, () => {
       obj.width *= 0.2;
       obj.height *= 0.2;
+      this.addObjFull(obj, functionCall);
     });
-    this.objs.set(
-      obj,
-      functionCall
-    );
   }
   remove() {
     this.gui.destroy();
@@ -2921,9 +2949,74 @@ var gui = class {
 // ../game/classes/functions.js
 var functions_exports = {};
 __export(functions_exports, {
-  input: () => input2
+  boxInput: () => boxInput2,
+  rawInput: () => rawInput
 });
-var input2 = async (textBox) => {
+var boxInput2 = async (boxText, title, colour = [0, 0, 0, 0.5], isPlaceholder = false, coords = [width() / 2, height() / 2], rectSize = [400, 150]) => {
+  if (boxText.textSize == void 0) {
+    boxText.textSize = rectSize[0] / 10;
+  }
+  if (title.textSize == void 0) {
+    title.textSize = rectSize[0] / 20;
+  }
+  if (boxText.font == void 0) {
+    boxText.font = "sink";
+  }
+  if (title.font == void 0) {
+    title.font = "sink";
+  }
+  const box = add([
+    rect(rectSize[0], rectSize[1]),
+    color(colour[0], colour[1], colour[2]),
+    opacity(colour[3]),
+    outline(5, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
+    origin("center"),
+    pos(coords[0], coords[1]),
+    z(100)
+  ]);
+  const titleText = add([
+    title,
+    origin("center"),
+    pos(coords[0], coords[1] - box.height / 2 + title.textSize),
+    z(102)
+  ]);
+  const outlineBox = add([
+    rect(rectSize[0] - 40, boxText.textSize + 20),
+    pos(coords[0], coords[1] + title.textSize / 2),
+    origin("center"),
+    opacity(0),
+    outline(1, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
+    z(103)
+  ]);
+  const textField = add([
+    boxText,
+    origin("center"),
+    pos(coords[0], coords[1] + title.textSize / 2),
+    opacity(isPlaceholder ? 0.5 : 1),
+    z(101)
+  ]);
+  const result = await new Promise((r, _j) => {
+    let returnText = "";
+    let placeholder = isPlaceholder ? "" : textField.text;
+    onKeyPress("backspace", () => {
+      returnText = returnText.substring(0, returnText.length - 1);
+      textField.text = placeholder + returnText;
+    });
+    onCharInput((char) => {
+      onKeyPress("enter", () => {
+        r(returnText);
+      });
+      returnText += char;
+      textField.text = placeholder + returnText;
+    });
+  });
+  box.destroy();
+  titleText.destroy();
+  outlineBox.destroy();
+  textField.destroy();
+  return result;
+};
+var rawInput = async (textBox) => {
   return new Promise((r, _j) => {
     let inputVal = "";
     onCharInput((char) => {
@@ -2931,7 +3024,7 @@ var input2 = async (textBox) => {
         r(inputVal);
       });
       inputVal += char;
-      textBox = inputVal;
+      textBox.text = inputVal;
     });
   });
 };
@@ -2945,14 +3038,32 @@ var selectorScreen = async () => {
     [20 * 8, 20 * 5],
     0.5,
     99,
-    false
+    false,
+    color(89, 90, 95)
   );
-  selector.addObj(text("Level Selector"), [50, -7], 1, () => console.log("bob"), true);
-  selector.addObj(text("New", { font: "sink", size: 48 }), [50, 90], 1, async () => {
-    const text2 = await input();
-    console.log(text2);
-  }, true);
-  const keyPress = await new Promise((resolve, _reject) => {
+  selector.addObj(text("Level Selector", { font: "sink", size: 72 }), [50, -7], 1, () => console.log(""), true);
+  selector.addLayer("levelSelect", [96, 80], [2, 3], outline(1, [0, 0, 0]));
+  const keyPress = await new Promise(async (resolve, _reject) => {
+    selector.addObj(text("New", { font: "sink", size: 48 }), [50, 90], 1, async () => {
+      const textResult = await boxInput(text("hello", { font: "sink" }), text("New level"), [0, 0, 0, 0.9], true);
+      resolve({
+        new: true,
+        session: textResult
+      });
+    }, true);
+    const data = (await (await fetch("/getLevels")).json()).levels;
+    data.forEach(async (x) => {
+      await loadSprite(x + "-Sprite", `/levels/${x}/image.png`);
+      const obj = add([
+        sprite(x + "-Sprite"),
+        scale(0.2),
+        pos(15, 50),
+        origin("center"),
+        z(105),
+        area()
+      ]);
+      selector.addObjFull(obj, () => console.log("cool"), "levelSelect");
+    });
     onKeyDown("v", () => {
       resolve({
         new: false,
@@ -2972,6 +3083,7 @@ no({
 loadAssets();
 focus();
 var level = await selectorScreen();
+var session = level.session;
 if (!level.new) {
   level.rawBlockData.forEach((x) => {
     createObject(new Vec3(x.coords.x, x.coords.y, x.coords.z));
@@ -3055,7 +3167,7 @@ onMouseDown(() => {
   }
 });
 onKeyPress("s", () => {
-  saveLevel();
+  saveLevel(session);
 });
 onKeyPress("=", () => {
   updateBlockOpacity(yLevel, 0.4);

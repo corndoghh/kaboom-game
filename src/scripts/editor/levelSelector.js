@@ -11,18 +11,44 @@ export const selectorScreen = async () => {
         0.5,
         99,
         false,
+        color(89, 90, 95),
     )
 
-    selector.addObj(text("Level Selector"), [50,-7], 1, () => console.log("bob"), true)
+    selector.addObj(text("Level Selector", {font: "sink", size: 72}), [50,-7], 1, () => console.log(""), true)
+
+    selector.addLayer("levelSelect", [96, 80], [2, 3], outline(1, [0,0,0]))
     
-    selector.addObj(text("New", {font: "sink", size: 48}), [50,90], 1, async () => {
-        const text = await input();
-        console.log(text)
-    }, true)
 
 
         
-    const keyPress = await new Promise((resolve, _reject) => {
+    const keyPress = await new Promise( async (resolve, _reject) => {
+    
+        selector.addObj(text("New", {font: "sink", size: 48}), [50,90], 1, async () => {
+            const textResult = await boxInput(text("hello", {font: "sink"}), text("New level"), [0,0,0,0.9], true);
+            resolve({
+                new: true,
+                session: textResult
+            })
+        }, true)
+
+        const data = (await (await fetch("/getLevels")).json()).levels
+
+        data.forEach(async (x) => {
+            await loadSprite(x+"-Sprite", `/levels/${x}/image.png`)
+            const obj = add([
+                sprite(x+"-Sprite"),
+                scale(0.2),
+                pos(15, 50),
+                origin("center"),
+                z(105),
+                area()
+            ])
+            selector.addObjFull(obj, () => console.log("cool"), "levelSelect")
+        })
+
+        
+
+
         onKeyDown(("v"), () => {
             resolve({
                 new: false,

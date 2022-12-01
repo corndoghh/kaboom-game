@@ -18,6 +18,7 @@ const level = await selectorScreen();
 
 // console.log(level)
 
+const session = level.session;
 if (!level.new) { level.rawBlockData.forEach((x) => { createObject(new Vec3(x.coords.x, x.coords.y, x.coords.z)) }) }
 
 
@@ -114,7 +115,7 @@ onMouseDown(() => {
 })
 
 onKeyPress("s", () => {
-    saveLevel()
+    saveLevel(session)
 })
 
 onKeyPress("=", () => {

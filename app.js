@@ -34,26 +34,51 @@ app.get("/gg", (_req, res) => {
     res.sendFile(path.join(__dirname, "/gg.html"))
 })
 
+app.get("/getLevels", (_req, res) => {
+    res.send({
+        levels: fs.readdirSync("src/levels")
+    })
+})
+
 app.post("/save", (req, res) => {
     //console.log(req.body[0])
     const blocks = JSON.stringify(req.body.blocks);
     const urlData = JSON.stringify(req.body.image);
+    const session = JSON.stringify(req.body.session).split('"')[1];
+    const rawBlockData = JSON.stringify(req.body.rawBlockData.filter((x) => x != null).concat(req.body.blocks))
+
+    console.log(rawBlockData)
 
 
 
     var dataurl= urlData.split('"')[1]
-    console.log(dataurl)
+    //console.log(dataurl)
     var regex = /^data:.+\/(.+);base64,(.*)$/;
     var matches = dataurl.match(regex);
-    console.log(matches)
+    //console.log(matches)
     var ext = matches[1];
     var data = matches[2];
     var buffer = Buffer.from(data, 'base64');
-    fs.writeFileSync('src/levels/image.' + ext, buffer);
+
+
+    if (!fs.existsSync(`src/levels/${session}/`)) { fs.mkdirSync(`src/levels/${session}/`) }
+
+
+    fs.writeFileSync(`src/levels/${session}/image.` + ext, buffer);
 
 
 
-    fs.writeFile("src/levels/level.json", blocks, 'utf8', function (err) {
+    fs.writeFile(`src/levels/${session}/blocks.json`, blocks, 'utf8', function (err) {
+        if (err) {
+            console.log("An error occured while writing JSON Object to File.");
+            return console.log(err);
+        }
+     
+        console.log("JSON file has been saved.");
+    });
+
+
+    fs.writeFile(`src/levels/${session}/rawBlockData.json`, rawBlockData, 'utf8', function (err) {
         if (err) {
             console.log("An error occured while writing JSON Object to File.");
             return console.log(err);
