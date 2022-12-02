@@ -2884,6 +2884,7 @@ var gui = class {
     this.layers = /* @__PURE__ */ new Map();
     this.objs = /* @__PURE__ */ new Map();
     this.layers.set("gui", this.gui);
+    this.gui.objs = [];
     onClick(() => {
       if (!this.clicked(mousePos())) {
         return;
@@ -2899,13 +2900,15 @@ var gui = class {
   clicked(vec2) {
     return inRegion(this.gui, vec2, !this.gui.hidden);
   }
-  addLayer(name, rectSize, coords, colour, outline2) {
+  addLayer(name, rectSize, coords, colour, outline2, zLayer) {
     const layer = add([
       pos(this.gui.width * coords[0] / 100 + this.gui.pos.x, this.gui.height * coords[1] / 100 + this.gui.pos.y),
       rect(this.gui.width * rectSize[0] / 100, this.gui.height * rectSize[1] / 100),
       colour,
-      outline2
+      outline2,
+      z(zLayer)
     ]);
+    layer.objs = [];
     this.layers.set(name, layer);
   }
   toggleGui() {
@@ -2925,6 +2928,7 @@ var gui = class {
       obj,
       functionCall
     );
+    layer.objs.push(obj);
   }
   addObj(displayed, relativePos, scale, functionCall, isText = false) {
     console.log(displayed);
@@ -3038,6 +3042,7 @@ var rawInput = async (textBox) => {
 Object.entries(functions_exports).forEach(([funName, exported]) => window[funName] = exported);
 var selectorScreen = async () => {
   document.title = "Level selector";
+  let cancelKey = void 0;
   const selector = new gui(
     [width() - 40 * 8, height() - 40 * 5],
     [20 * 8, 20 * 5],
@@ -3048,6 +3053,10 @@ var selectorScreen = async () => {
   );
   selector.addObj(text("Level Selector", { font: "sink", size: 72 }), [50, -7], 1, () => console.log(""), true);
   selector.addLayer("levelSelect", [96, 80], [2, 3], outline(1, [0, 0, 0]));
+  selector.addLayer("hide", [96, 20], [2, 79.9], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 100);
+  selector.addLayer("hide2", [96, 20], [2, 100], outline(1, new Color(0, 0, 0)), color(0, 0, 0), 100);
+  selector.addLayer("hide3", [96, 20], [2, -20], outline(1, new Color(0, 0, 0)), color(0, 0, 0), 100);
+  selector.addLayer("hide4", [96, 3], [2, 0], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 100);
   const keyPress = await new Promise(async (resolve, _reject) => {
     selector.addObj(text("New", { font: "sink", size: 48 }), [50, 90], 1, async () => {
       const textResult = await boxInput(text("hello", { font: "sink" }), text("New level"), [0, 0, 0, 0.9], true);
@@ -3057,11 +3066,6 @@ var selectorScreen = async () => {
       });
     }, true);
     const data = (await (await fetch("/getLevels")).json()).levels;
-    selector.addObjFull(add([
-      rect(width(), height()),
-      pos(-10, 85),
-      color(0, 0, 255)
-    ]));
     data.forEach(async (x, i) => {
       await loadSprite(x + "-Sprite", `/levels/${x}/image.png`);
       const xPos = 34 * (i % 3) + 16;
@@ -3072,11 +3076,40 @@ var selectorScreen = async () => {
         pos(xPos, yPos),
         z(99)
       ]);
-      console.log(box.pos);
       selector.addObjFull(box, () => console.log("cool"), "levelSelect");
-      console.log(box.pos);
     });
-    onKeyDown("v", () => {
+    function detectMouseWheelDirection(e) {
+      var delta = null, direction = false;
+      if (!e) {
+        e = window.event;
+      }
+      if (e.wheelDelta) {
+        delta = e.wheelDelta / 60;
+      } else if (e.detail) {
+        delta = -e.detail / 2;
+      }
+      if (delta !== null) {
+        direction = delta > 0 ? "up" : "down";
+      }
+      return direction;
+    }
+    function handleMouseWheelDirection(direction) {
+      const savedLevels = selector.layers.get("levelSelect").objs;
+      const moveDir = direction == "down" ? -20 : 20;
+      savedLevels.forEach((x) => {
+        x.moveBy(0, moveDir);
+      });
+    }
+    document.onmousewheel = function(e) {
+      handleMouseWheelDirection(detectMouseWheelDirection(e));
+    };
+    if (window.addEventListener) {
+      document.addEventListener("DOMMouseScroll", function(e) {
+        handleMouseWheelDirection(detectMouseWheelDirection(e));
+      });
+    }
+    cancelKey = onKeyDown("v", () => {
+      console.log("b");
       resolve({
         new: false,
         session: "x",
@@ -3084,6 +3117,7 @@ var selectorScreen = async () => {
       });
     });
   });
+  cancelKey();
   selector.remove();
   return keyPress;
 };

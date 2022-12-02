@@ -4,6 +4,7 @@ Object.entries(exports).forEach(([funName, exported]) => window[funName] = expor
 
 export const selectorScreen = async () => {
     document.title = "Level selector"
+    let cancelKey = undefined
 
     const selector = new gui(
         [width() - 40 * 8, height() - 40 * 5],
@@ -17,6 +18,12 @@ export const selectorScreen = async () => {
     selector.addObj(text("Level Selector", {font: "sink", size: 72}), [50,-7], 1, () => console.log(""), true)
 
     selector.addLayer("levelSelect", [96, 80], [2, 3], outline(1, [0,0,0]))
+    
+    selector.addLayer("hide", [96, 20], [2, 79.9], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 100)
+    selector.addLayer("hide2", [96, 20], [2, 100], outline(1, new Color(0,0,0)), color(0,0,0), 100)
+    selector.addLayer("hide3", [96, 20], [2, -20], outline(1, new Color(0,0,0)), color(0,0,0), 100)
+    selector.addLayer("hide4", [96, 3], [2, 0], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 100)
+
     
 
 
@@ -33,23 +40,21 @@ export const selectorScreen = async () => {
 
         const data = (await (await fetch("/getLevels")).json()).levels
 
-        selector.addObjFull(add([
-            rect(width(), height()),
-            pos(-10, 85),
-            color(0,0,255)
 
-        ]))
 
         data.forEach(async (x, i) => {
             await loadSprite(x+"-Sprite", `/levels/${x}/image.png`)
             const xPos = 34 * (i % 3) + 16;
             const yPos = (74 + (74*Math.floor(i / 3)) - (selector.gui.width/3 * 0.7 /2 / selector.layers.get("levelSelect").height * 100)) 
+
             const box = add([
                 rect(selector.gui.width/3 * 0.8, selector.gui.width/3 * 0.7),
                 origin("center"),
                 pos(xPos, yPos),
                 z(99),
             ])
+
+
             // const obj = add([
             //     sprite(x+"-Sprite"),
             //     scale(0.2),
@@ -57,25 +62,71 @@ export const selectorScreen = async () => {
             //     origin("center"),
             //     z(105),
             // ])
-            console.log(box.pos)
             selector.addObjFull(box, () => console.log("cool"), "levelSelect")
-            console.log(box.pos)
 
             //selector.addObjFull(obj, () => console.log("cool"), "levelSelect")
         })
 
+
+        function detectMouseWheelDirection( e )
+        {
+            var delta = null,
+                direction = false
+            ;
+            if ( !e ) { // if the event is not provided, we get it from the window object
+                e = window.event;
+            }
+            if ( e.wheelDelta ) { // will work in most cases
+                delta = e.wheelDelta / 60;
+            } else if ( e.detail ) { // fallback for Firefox
+                delta = -e.detail / 2;
+            }
+            if ( delta !== null ) {
+                direction = delta > 0 ? 'up' : 'down';
+            }
+
+            return direction;
+        }
+        function handleMouseWheelDirection( direction )
+        {
+            const savedLevels = selector.layers.get("levelSelect").objs
+            const moveDir = direction == "down" ? -20 : 20 
+            savedLevels.forEach((x) => {
+                x.moveBy(0, moveDir)
+            })
+        }
+        document.onmousewheel = function( e ) {
+            handleMouseWheelDirection( detectMouseWheelDirection( e ) );
+        };
+        if ( window.addEventListener ) {
+            document.addEventListener( 'DOMMouseScroll', function( e ) {
+                handleMouseWheelDirection( detectMouseWheelDirection( e ) );
+            });
+        }
+
+
+        // selector.addObjFull(add([
+        //     rect(width() - 40 * 8, 10),
+        //     pos(0, 83),
+        //     color(0,0,255),
+        //     z(99),
+        // ]), () => { })
+
         
 
 
-        onKeyDown(("v"), () => {
+        cancelKey = onKeyDown(("v"), () => {
+            console.log("b")
             resolve({
                 new: false,
                 session: "x",
-                rawBlockData: [{coords: {x: 10, y: 0, z: 10}}]
+                rawBlockData: [{coords: {x: 10, y: 0, z: 10}}],
             })
         })
+
     })
 
+    cancelKey()
     selector.remove();
 
 

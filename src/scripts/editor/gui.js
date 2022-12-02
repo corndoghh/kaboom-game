@@ -26,6 +26,7 @@ export class gui {
         this.layers = new Map()
         this.objs = new Map()
         this.layers.set("gui", this.gui)
+        this.gui.objs = []
 
         onClick(() => {
             if (!this.clicked(mousePos())) { return }
@@ -41,15 +42,19 @@ export class gui {
         return inRegion(this.gui, vec2, !this.gui.hidden)
     }
 
-    addLayer(name, rectSize, coords, colour, outline) {
+    addLayer(name, rectSize, coords, colour, outline, zLayer) {
         const layer = add([
             pos((this.gui.width * coords[0] / 100) + this.gui.pos.x, (this.gui.height * coords[1] / 100) + this.gui.pos.y),
             rect((this.gui.width * rectSize[0] / 100), (this.gui.height * rectSize[1] / 100)),
             colour,
-            outline
+            outline,
+            z(zLayer)
         ])
+        layer.objs = []
         this.layers.set(name, layer)
     } 
+
+
 
     
 
@@ -66,6 +71,7 @@ export class gui {
         this.objs.set(
             obj, functionCall
         )
+        layer.objs.push(obj)
 
     }
 
