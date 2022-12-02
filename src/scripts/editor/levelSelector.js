@@ -33,17 +33,35 @@ export const selectorScreen = async () => {
 
         const data = (await (await fetch("/getLevels")).json()).levels
 
+        selector.addObjFull(add([
+            rect(width(), height()),
+            pos(-10, 85),
+            color(0,0,255)
+
+        ]))
+
         data.forEach(async (x, i) => {
             await loadSprite(x+"-Sprite", `/levels/${x}/image.png`)
-            const obj = add([
-                sprite(x+"-Sprite"),
-                scale(0.2),
-                pos((100/data.length*0.5) * (2*i) + 15, 20),
+            const xPos = 34 * (i % 3) + 16;
+            const yPos = (74 + (74*Math.floor(i / 3)) - (selector.gui.width/3 * 0.7 /2 / selector.layers.get("levelSelect").height * 100)) 
+            const box = add([
+                rect(selector.gui.width/3 * 0.8, selector.gui.width/3 * 0.7),
                 origin("center"),
-                z(105),
+                pos(xPos, yPos),
+                z(99),
             ])
-            console.log(obj.pos)
-            selector.addObjFull(obj, () => console.log("cool"), "levelSelect")
+            // const obj = add([
+            //     sprite(x+"-Sprite"),
+            //     scale(0.2),
+            //     pos((100/data.length*0.5) * (2*i) + 15, 20),
+            //     origin("center"),
+            //     z(105),
+            // ])
+            console.log(box.pos)
+            selector.addObjFull(box, () => console.log("cool"), "levelSelect")
+            console.log(box.pos)
+
+            //selector.addObjFull(obj, () => console.log("cool"), "levelSelect")
         })
 
         

@@ -2911,18 +2911,22 @@ var gui = class {
   toggleGui() {
     this.gui.hidden = !this.gui.hidden;
     [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden);
-    [...this.layers.keys()].forEach((e) => e.hidden = this.gui.hidden);
+    [...this.layers.values()].forEach((e) => e.hidden = this.gui.hidden);
   }
   addObjFull(obj, functionCall, parentLayer = "gui") {
     const layer = this.layers.get(parentLayer);
+    const percentage = [obj.pos.x, obj.pos.y];
     obj.pos.x = layer.width * obj.pos.x / 100 + layer.pos.x;
     obj.pos.y = layer.height * obj.pos.y / 100 + layer.pos.y;
+    if (percentage[1] > 100) {
+      console.log("out");
+    }
     this.objs.set(
       obj,
       functionCall
     );
   }
-  addObj(displayed, relativePos, scale2, functionCall, isText = false) {
+  addObj(displayed, relativePos, scale, functionCall, isText = false) {
     console.log(displayed);
     const obj = add([
       displayed,
@@ -2933,16 +2937,17 @@ var gui = class {
     ]);
     console.log(obj.pos);
     obj.hidden = this.gui.hidden;
-    obj.scale = scale2;
+    obj.scale = scale;
     wait(0.01, () => {
-      obj.width *= scale2;
-      obj.height *= scale2;
+      obj.width *= scale;
+      obj.height *= scale;
       this.addObjFull(obj, functionCall);
     });
   }
   remove() {
     this.gui.destroy();
     [...this.objs.keys()].forEach((x) => x.destroy());
+    [...this.layers.values()].forEach((x) => x.destroy());
   }
 };
 
@@ -3052,17 +3057,24 @@ var selectorScreen = async () => {
       });
     }, true);
     const data = (await (await fetch("/getLevels")).json()).levels;
+    selector.addObjFull(add([
+      rect(width(), height()),
+      pos(-10, 85),
+      color(0, 0, 255)
+    ]));
     data.forEach(async (x, i) => {
       await loadSprite(x + "-Sprite", `/levels/${x}/image.png`);
-      const obj = add([
-        sprite(x + "-Sprite"),
-        scale(0.2),
-        pos(100 / data.length * 0.5 * (2 * i) + 15, 20),
+      const xPos = 34 * (i % 3) + 16;
+      const yPos = 74 + 74 * Math.floor(i / 3) - selector.gui.width / 3 * 0.7 / 2 / selector.layers.get("levelSelect").height * 100;
+      const box = add([
+        rect(selector.gui.width / 3 * 0.8, selector.gui.width / 3 * 0.7),
         origin("center"),
-        z(105)
+        pos(xPos, yPos),
+        z(99)
       ]);
-      console.log(obj.pos);
-      selector.addObjFull(obj, () => console.log("cool"), "levelSelect");
+      console.log(box.pos);
+      selector.addObjFull(box, () => console.log("cool"), "levelSelect");
+      console.log(box.pos);
     });
     onKeyDown("v", () => {
       resolve({

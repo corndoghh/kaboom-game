@@ -53,12 +53,16 @@ export class gui {
 
     
 
-    toggleGui() { this.gui.hidden = !this.gui.hidden; [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden); [...this.layers.keys()].forEach((e) => e.hidden = this.gui.hidden) }
+    toggleGui() { this.gui.hidden = !this.gui.hidden; [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden); [...this.layers.values()].forEach((e) => e.hidden = this.gui.hidden) }
 
     addObjFull(obj ,functionCall, parentLayer = "gui") {
         const layer = this.layers.get(parentLayer)
+        const percentage = [obj.pos.x, obj.pos.y]
         obj.pos.x = (layer.width * obj.pos.x / 100) + layer.pos.x// + obj.width*obj.scale/2
         obj.pos.y = (layer.height * obj.pos.y / 100) + layer.pos.y //+ obj.height*obj.scale/2
+        if (percentage[1] > 100) {
+            console.log("out")
+        }
         this.objs.set(
             obj, functionCall
         )
@@ -90,7 +94,8 @@ export class gui {
     remove() {
         this.gui.destroy();
 
-        [...this.objs.keys()].forEach((x) => x.destroy())
+        [...this.objs.keys()].forEach((x) => x.destroy());
+        [...this.layers.values()].forEach((x) => x.destroy())
     }
 }
 
