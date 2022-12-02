@@ -57,8 +57,8 @@ export class gui {
 
     addObjFull(obj ,functionCall, parentLayer = "gui") {
         const layer = this.layers.get(parentLayer)
-        obj.pos.x = (layer.width * obj.pos.x / 100) + layer.pos.x
-        obj.pos.y = (layer.height * obj.pos.y / 100) + layer.pos.y
+        obj.pos.x = (layer.width * obj.pos.x / 100) + layer.pos.x// + obj.width*obj.scale/2
+        obj.pos.y = (layer.height * obj.pos.y / 100) + layer.pos.y //+ obj.height*obj.scale/2
         this.objs.set(
             obj, functionCall
         )
@@ -79,8 +79,8 @@ export class gui {
         obj.hidden = this.gui.hidden
         obj.scale = scale
         wait(0.01, () => {
-            obj.width *= 0.2
-            obj.height *= 0.2
+            obj.width *= scale
+            obj.height *= scale
             this.addObjFull(obj, functionCall)
 
         })

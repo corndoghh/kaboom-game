@@ -33,16 +33,16 @@ export const selectorScreen = async () => {
 
         const data = (await (await fetch("/getLevels")).json()).levels
 
-        data.forEach(async (x) => {
+        data.forEach(async (x, i) => {
             await loadSprite(x+"-Sprite", `/levels/${x}/image.png`)
             const obj = add([
                 sprite(x+"-Sprite"),
                 scale(0.2),
-                pos(15, 50),
+                pos((100/data.length*0.5) * (2*i) + 15, 20),
                 origin("center"),
                 z(105),
-                area()
             ])
+            console.log(obj.pos)
             selector.addObjFull(obj, () => console.log("cool"), "levelSelect")
         })
 

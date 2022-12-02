@@ -2935,8 +2935,8 @@ var gui = class {
     obj.hidden = this.gui.hidden;
     obj.scale = scale2;
     wait(0.01, () => {
-      obj.width *= 0.2;
-      obj.height *= 0.2;
+      obj.width *= scale2;
+      obj.height *= scale2;
       this.addObjFull(obj, functionCall);
     });
   }
@@ -3052,16 +3052,16 @@ var selectorScreen = async () => {
       });
     }, true);
     const data = (await (await fetch("/getLevels")).json()).levels;
-    data.forEach(async (x) => {
+    data.forEach(async (x, i) => {
       await loadSprite(x + "-Sprite", `/levels/${x}/image.png`);
       const obj = add([
         sprite(x + "-Sprite"),
         scale(0.2),
-        pos(15, 50),
+        pos(100 / data.length * 0.5 * (2 * i) + 15, 20),
         origin("center"),
-        z(105),
-        area()
+        z(105)
       ]);
+      console.log(obj.pos);
       selector.addObjFull(obj, () => console.log("cool"), "levelSelect");
     });
     onKeyDown("v", () => {
