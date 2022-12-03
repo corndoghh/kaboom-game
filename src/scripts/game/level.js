@@ -20,6 +20,13 @@ export class Level {
         this.currentObjectClicked = null
         this.rawBlocks = levelData.rawBlocks
 
+        this.entites = [player]
+        items.forEach((x) => this.entites.push(x))
+        enemies.forEach((x) => this.entites.push(x))
+
+
+        console.log(this.entites)
+
 
 
         //loading in the map Image and blocks
@@ -67,8 +74,13 @@ export class Level {
                 this.currentObjectClicked = null;
 
                 if (!document.dispatchEvent(movement)) return;
+                
+                const entity = this.getEntityAt(movement.detail.to)
 
-                this.player.move(movement.detail.to)
+                if (entity[0] != undefined) entity[0].destroy()
+
+
+                this.player.walk(movement.detail.to)
             }
             
         })
@@ -77,15 +89,21 @@ export class Level {
 
     stopClickLoop() { this.clickLoop() }
 
-    getObjectAt(vec3) {
+    getXat(vec3, y) {
+        if (y == undefined) return;
         let result = undefined
-        for (let index = 0; index < this.rawBlocks.length; index++) {
-            const x = this.rawBlocks[index];
+        for (let index = 0; index < y.length; index++) {
+            const x = y[index];
+            if (x == undefined) continue;
             const pos = {x: vec3.pos.x, y: vec3.pos.y, z: vec3.pos.z}
-            if (isEqual(x.pos, pos)) { result = x }
-            
+            console.log(x.pos, pos)
+            if (isEqual(x.pos, pos)) { result = x; break}
         }
         return result
     }
+
+    getObjectAt(vec3) { return this.getXat(vec3, this.rawBlocks) }
+
+    getEntityAt(vec3) { return this.entites.filter((x) => x.vec3 == this.getXat(vec3, this.entites.filter((x) => x != this.player).map((x) => x.vec3)) ) }
 
 }

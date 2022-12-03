@@ -2792,6 +2792,10 @@ var Level = class {
     this.lastClickedBlock = null;
     this.currentObjectClicked = null;
     this.rawBlocks = levelData.rawBlocks;
+    this.entites = [player2];
+    items.forEach((x) => this.entites.push(x));
+    enemies.forEach((x) => this.entites.push(x));
+    console.log(this.entites);
     if (this.blocks != null) {
       this.blocks.forEach((x) => new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image));
     }
@@ -2826,28 +2830,43 @@ var Level = class {
         this.currentObjectClicked = null;
         if (!document.dispatchEvent(movement))
           return;
-        this.player.move(movement.detail.to);
+        const entity = this.getEntityAt(movement.detail.to);
+        if (entity[0] != void 0)
+          entity[0].destroy();
+        this.player.walk(movement.detail.to);
       }
     });
   }
   stopClickLoop() {
     this.clickLoop();
   }
-  getObjectAt(vec3) {
+  getXat(vec3, y) {
+    if (y == void 0)
+      return;
     let result = void 0;
-    for (let index = 0; index < this.rawBlocks.length; index++) {
-      const x = this.rawBlocks[index];
+    for (let index = 0; index < y.length; index++) {
+      const x = y[index];
+      if (x == void 0)
+        continue;
       const pos2 = { x: vec3.pos.x, y: vec3.pos.y, z: vec3.pos.z };
+      console.log(x.pos, pos2);
       if (isEqual(x.pos, pos2)) {
         result = x;
+        break;
       }
     }
     return result;
   }
+  getObjectAt(vec3) {
+    return this.getXat(vec3, this.rawBlocks);
+  }
+  getEntityAt(vec3) {
+    return this.entites.filter((x) => x.vec3 == this.getXat(vec3, this.entites.filter((x2) => x2 != this.player).map((x2) => x2.vec3)));
+  }
 };
 
 // entity.js
-var entity = class {
+var Entity = class {
   constructor(image, origin2, globalCoords, offset = vec2(0)) {
     this.vec3 = new Vec3(globalCoords[0], globalCoords[1], globalCoords[2]);
     this.offset = offset;
@@ -2866,13 +2885,19 @@ var entity = class {
     this.sprite.pos = vec2(vec.screenPos.x, vec.screenPos.y).add(this.offset);
     this.vec3 = vec;
   }
+  destroy() {
+    this.sprite.destroy();
+  }
 };
 
 // player.js
-var Player = class extends entity {
+var Player = class extends Entity {
   constructor(image) {
     super(image, origin("bot"), [10, 0, 10], vec2(32, 20));
     this.speed = 0.3;
+  }
+  walk(vec3) {
+    this.move(vec3);
   }
   getPos() {
     return this.vec3;
@@ -2882,9 +2907,18 @@ var Player = class extends entity {
 // events.js
 var loadEvents = () => {
   document.addEventListener("movement", (e) => {
-    if (!e.detail.level.getObjectAt(e.detail.to))
+    if (!e.detail.level.getObjectAt(e.detail.to)) {
       e.preventDefault();
+    }
   });
+};
+
+// item.js
+var Item = class extends Entity {
+  constructor(image) {
+    super(image, origin("top"), [10, 0, 20], [30, -15]);
+    this.getSprite().scale = 0.07;
+  }
 };
 
 // game.js
@@ -2892,7 +2926,9 @@ no({
   background: [0, 0, 0]
 });
 loadSprite("player", "sprites/player.png");
+loadSprite("pick", "sprites/pick.png");
 var data = await levelLoader("new_level");
 var player = new Player("player");
+var item = new Item("pick");
 loadEvents();
-var level_one = new Level("level_one", data, player);
+var level_one = new Level("level_one", data, player, [], [item]);
