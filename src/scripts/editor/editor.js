@@ -1,9 +1,10 @@
 import kaboom from "kaboom";
-import { destroyObject, createObject, saveLevel, updateBlockOpacity, isOccupied, isEqual } from "./blocks"
+import { destroyObject, createObject, saveLevel, updateBlockOpacity, isOccupied } from "./blocks"
+import { isEqual } from "../globalScripts/functions";
 import { loadAssets } from "./loadAssets"
-import { screenToGlobal } from "../game/classes/vec3"
-import { gui } from "./gui"
-import { Vec3 } from "../game/classes/vec3"
+import { screenToGlobal } from "../globalScripts/vec3"
+import { gui } from "../globalScripts/gui"
+import { Vec3 } from "../globalScripts/vec3"
 import { selectorScreen } from "./levelSelector"
 
 kaboom({
@@ -115,7 +116,9 @@ onMouseDown(() => {
 })
 
 onKeyPress("s", () => {
+    if (!tools.gui.hidden) { tools.toggleGui() }
     saveLevel(session)
+
 })
 
 onKeyPress("=", () => {

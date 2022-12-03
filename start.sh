@@ -9,6 +9,11 @@ cd ..
 cd editor
 esbuild editor.js --bundle --format=esm > build.js
 
+cd ..
+cd manager
+esbuild manager.js --bundle --format=esm > build.js
+
+
 
 
 

@@ -31,7 +31,7 @@ export class gui {
         onClick(() => {
             if (!this.clicked(mousePos())) { return }
 
-            [...this.objs.keys()].forEach((e) => {
+            [...this.objs.keys()].filter((x) => !x.hidden).forEach((e) => {
                 const e2 = {pos: {x: e.pos.x - e.width/2, y: e.pos.y - e.height/2 }, width: e.width, height: e.height }
                 if (inRegion(e2, mousePos())) { this.objs.get(e).call() }
             })
@@ -48,12 +48,20 @@ export class gui {
             rect((this.gui.width * rectSize[0] / 100), (this.gui.height * rectSize[1] / 100)),
             colour,
             outline,
-            z(zLayer)
+            z(zLayer),
+            origin("center"),
         ])
         layer.objs = []
         this.layers.set(name, layer)
     } 
 
+    isLayerHidden(layer) { return this.layers.get(layer).hidden }
+
+
+    hideLayer(layer, bool) {
+        this.layers.get(layer).hidden = bool;
+        this.layers.get(layer).objs.forEach((x) => x.hidden = bool)
+    }
 
 
     
@@ -65,6 +73,7 @@ export class gui {
         const percentage = [obj.pos.x, obj.pos.y]
         obj.pos.x = (layer.width * obj.pos.x / 100) + layer.pos.x// + obj.width*obj.scale/2
         obj.pos.y = (layer.height * obj.pos.y / 100) + layer.pos.y //+ obj.height*obj.scale/2
+        obj.hidden = layer.hidden
         if (percentage[1] > 100) {
             console.log("out")
         }
@@ -76,22 +85,22 @@ export class gui {
     }
 
 
-    addObj(displayed, relativePos, scale, functionCall, isText = false) {       
-        console.log(displayed)
+    addObj(displayed, relativePos, scale, functionCall, parentLayer = "gui") {   
+        const layer = this.layers.get(parentLayer)
+        console.log(layer)
         const obj = add([
             displayed,
             pos(relativePos[0], relativePos[1]),
             origin("center"),
-            z(this.gui.z+1),
+            z(layer.z+1),
             area()            
         ])
         console.log(obj.pos)
-        obj.hidden = this.gui.hidden
         obj.scale = scale
         wait(0.01, () => {
             obj.width *= scale
             obj.height *= scale
-            this.addObjFull(obj, functionCall)
+            this.addObjFull(obj, functionCall, parentLayer)
 
         })
 

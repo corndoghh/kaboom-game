@@ -1,33 +1,19 @@
 import kaboom from "kaboom";
-import { loader } from "./levelLoader"
-import { loadAssets } from "./loadAssets"
+import { levelLoader } from "./levelLoader";
+import { Level } from "./level"
+import { Player } from "./player";
+import { loadEvents } from "./events"
 
 kaboom({
     background: [0,0,0]
 })
 
-focus()
+loadSprite("player", "sprites/player.png")
 
+const data = await levelLoader("new_level")
 
-loadAssets()
+const player = new Player("player")
 
-loader()
+loadEvents()
 
-
-
-
-
-// fetch('/load', {
-//     method: 'POST',
-//     headers: {
-//         'Accept': 'application/json',
-//         'Content-Type': 'application/json'
-//     },
-//     body: JSON.stringify({ "file": "level" })
-// })
-// .then(response => response.json())
-// .then(response => {
-//     [...response].forEach((e) => {
-//         console.log(e)
-//     })
-// })
+const level_one = new Level("level_one", data, player)

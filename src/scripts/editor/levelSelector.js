@@ -1,5 +1,5 @@
-import { gui } from "./gui"
-import * as exports from "../game/classes/functions"  
+import { gui } from "../globalScripts/gui"
+import * as exports from "../globalScripts/functions"  
 Object.entries(exports).forEach(([funName, exported]) => window[funName] = exported);
 
 export const selectorScreen = async () => {
@@ -15,14 +15,16 @@ export const selectorScreen = async () => {
         color(89, 90, 95),
     )
 
-    selector.addObj(text("Level Selector", {font: "sink", size: 72}), [50,-7], 1, () => console.log(""), true)
 
-    selector.addLayer("levelSelect", [96, 80], [2, 3], outline(1, [0,0,0]))
+    selector.addLayer("levelSelect", [96, 80], [50, 45], outline(1, [0,0,0]))
     
-    selector.addLayer("hide", [96, 20], [2, 79.9], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 100)
-    selector.addLayer("hide2", [96, 20], [2, 100], outline(1, new Color(0,0,0)), color(0,0,0), 100)
-    selector.addLayer("hide3", [96, 20], [2, -20], outline(1, new Color(0,0,0)), color(0,0,0), 100)
-    selector.addLayer("hide4", [96, 3], [2, 0], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 100)
+    selector.addLayer("hide", [96, 20], [50, 95], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 100)
+    selector.addLayer("hide2", [96, 20], [50, 110], outline(1, new Color(0,0,0)), color(0,0,0), 100)
+    selector.addLayer("hide3", [96, 20], [50, -10], outline(1, new Color(0,0,0)), color(0,0,0), 100)
+    selector.addLayer("hide4", [96, 5], [50, 2.5], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 100)
+
+    selector.addObj(text("Level Selector", {font: "sink", size: 72}), [50,-7], 1, () => {} )
+
 
     
 
@@ -36,7 +38,7 @@ export const selectorScreen = async () => {
                 new: true,
                 session: textResult
             })
-        }, true)
+        } )
 
         const data = (await (await fetch("/getLevels")).json()).levels
 
@@ -44,8 +46,8 @@ export const selectorScreen = async () => {
 
         data.forEach(async (x, i) => {
             await loadSprite(x+"-Sprite", `/levels/${x}/image.png`)
-            const xPos = 34 * (i % 3) + 16;
-            const yPos = (74 + (74*Math.floor(i / 3)) - (selector.gui.width/3 * 0.7 /2 / selector.layers.get("levelSelect").height * 100)) 
+            const xPos = (34 * (i % 3) + 16) - 50;
+            const yPos = ((74 + (74*Math.floor(i / 3)) - (selector.gui.width/3 * 0.7 /2 / selector.layers.get("levelSelect").height * 100))) - 50
 
             const box = add([
                 rect(selector.gui.width/3 * 0.8, selector.gui.width/3 * 0.7),
@@ -66,6 +68,9 @@ export const selectorScreen = async () => {
 
             //selector.addObjFull(obj, () => console.log("cool"), "levelSelect")
         })
+
+        let currentScroll = 0
+        const maxScroll = -Math.floor((data.length -1) / 3) * 440
 
 
         function detectMouseWheelDirection( e )
@@ -90,7 +95,10 @@ export const selectorScreen = async () => {
         function handleMouseWheelDirection( direction )
         {
             const savedLevels = selector.layers.get("levelSelect").objs
-            const moveDir = direction == "down" ? -20 : 20 
+            const moveDir = direction == "down" ? -40 : 40
+            currentScroll += moveDir 
+            if (currentScroll < maxScroll || currentScroll > 0 ) { currentScroll -= moveDir; return; }
+
             savedLevels.forEach((x) => {
                 x.moveBy(0, moveDir)
             })
@@ -115,18 +123,18 @@ export const selectorScreen = async () => {
         
 
 
-        cancelKey = onKeyDown(("v"), () => {
-            console.log("b")
-            resolve({
-                new: false,
-                session: "x",
-                rawBlockData: [{coords: {x: 10, y: 0, z: 10}}],
-            })
-        })
+        // cancelKey = onKeyDown(("v"), () => {
+        //     console.log("b")
+        //     resolve({
+        //         new: false,
+        //         session: "x",
+        //         rawBlockData: [{coords: {x: 10, y: 0, z: 10}}],
+        //     })
+        // })
 
     })
 
-    cancelKey()
+    //cancelKey()
     selector.remove();
 
 

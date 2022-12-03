@@ -2680,21 +2680,53 @@ var no = a((i = {}) => {
   return ye;
 }, "default");
 
-// classes/object.js
-var block = class {
-  constructor(image, vec3, options) {
-    this.image = image;
-    this.vec3 = vec3;
-    this.options = options;
-    this.sprite = add([
-      sprite(image),
-      pos(vec3.screenPos.x, vec3.screenPos.y),
-      z(vec3.z)
-    ]);
+// levelLoader.js
+var levelLoader = async (level) => {
+  const path = `/levels/${level}`;
+  await loadSprite(`${level}_image`, path + "/image.png");
+  const blocks = await (await fetch(path + "/blocks.json")).json();
+  const rawBlocks = await (await fetch(path + "/rawBlockData.json")).json();
+  const blockImageArray = [];
+  blocks.forEach((x) => {
+    if (!blockImageArray.includes(x.image)) {
+      blockImageArray.push(x.image);
+    }
+  });
+  if (blockImageArray.length > 0) {
+    await new Promise(async (r, _j) => {
+      blockImageArray.forEach(async (x, i) => {
+        await loadSprite(x, `sprites/${x}.png`);
+        if (i == blockImageArray.length - 1) {
+          r();
+        }
+      });
+    });
   }
+  return { image: `${level}_image`, blocks, rawBlocks };
 };
 
-// classes/vec3.js
+// ../globalScripts/functions.js
+function isEqual(obj1, obj2) {
+  var props1 = Object.getOwnPropertyNames(obj1);
+  var props2 = Object.getOwnPropertyNames(obj2);
+  if (props1.length != props2.length) {
+    return false;
+  }
+  for (var i = 0; i < props1.length; i++) {
+    let val1 = obj1[props1[i]];
+    let val2 = obj2[props1[i]];
+    let isObjects = isObject(val1) && isObject(val2);
+    if (isObjects && !isEqual(val1, val2) || !isObjects && val1 !== val2) {
+      return false;
+    }
+  }
+  return true;
+}
+function isObject(object) {
+  return object != null && typeof object === "object";
+}
+
+// ../globalScripts/vec3.js
 var grid = 25;
 var Vec3 = class {
   constructor(x, y, z3) {
@@ -2725,34 +2757,142 @@ var Vec3 = class {
     console.log(this.pos);
   }
 };
-
-// levelLoader.js
-var loader = async (level) => {
-  loadSprite("static", "/levels/image.png");
-  const response = await fetch("/levels/level.json");
-  const data = await response.json();
-  const staticImage = add([
-    sprite("static"),
-    pos(0, 0)
-  ]);
-  wait(0.01, () => {
-    staticImage.pos.x -= staticImage.width - width();
-    staticImage.pos.y -= staticImage.height - height();
-  });
-  [...data].forEach((e) => {
-    new block(e.image, new Vec3(e.pos.x, e.pos.y, e.pos.z));
-  });
+var screenToGlobal = (vec22) => {
+  let mX = vec22.x - width() / 2;
+  let mY = vec22.y - height() / 2 + (grid + grid) * 8;
+  mY = (mX - mY * 2) / -2;
+  mX = mX + mY;
+  const y = Math.floor(Math.floor(mY) / 32);
+  const x = Math.floor(Math.floor(mX) / 32);
+  return new Vec3(x, 0, y);
 };
 
-// loadAssets.js
-var loadAssets = () => {
-  loadSprite("block", "sprites/tile.png");
+// block.js
+var Block = class {
+  constructor(vec3, image) {
+    console.log(vec3);
+    this.sprite = add([
+      sprite(image),
+      pos(vec2(vec3.screenPos.x, vec3.screenPos.y)),
+      z(vec3.z)
+    ]);
+  }
+};
+
+// level.js
+var levels = /* @__PURE__ */ new Map();
+var Level = class {
+  constructor(name, levelData, player2, enemies, items, end) {
+    this.player = player2;
+    this.enemies = enemies;
+    this.items = items;
+    this.end = end;
+    this.name = name;
+    this.blocks = levelData.blocks;
+    this.lastClickedBlock = null;
+    this.currentObjectClicked = null;
+    this.rawBlocks = levelData.rawBlocks;
+    if (this.blocks != null) {
+      this.blocks.forEach((x) => new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image));
+    }
+    if (levelData.image != null) {
+      this.image = add([sprite(levelData.image), z(1)]);
+    }
+    this.objs = [this.player, this.enemies, this.items, this.blocks, this.image];
+    levels.set(name, this);
+    this.startClickLoop();
+  }
+  startClickLoop() {
+    if (this.clickLoop != null) {
+      this.clickLoop();
+    }
+    this.clickLoop = onClick(() => {
+      this.lastClickedBlock = screenToGlobal(mousePos());
+      if (this.lastClickedBlock.pos.x == this.player.getPos().pos.x && this.lastClickedBlock.pos.y == this.player.getPos().pos.y && this.lastClickedBlock.pos.z == this.player.getPos().pos.z) {
+        this.currentObjectClicked = this.player;
+        return;
+      }
+      if (this.currentObjectClicked == this.player) {
+        const movement = new CustomEvent("movement", {
+          bubbles: true,
+          cancelable: true,
+          detail: {
+            entity: this.player,
+            from: this.player.getPos(),
+            to: this.lastClickedBlock,
+            level: this
+          }
+        });
+        this.currentObjectClicked = null;
+        if (!document.dispatchEvent(movement))
+          return;
+        this.player.move(movement.detail.to);
+      }
+    });
+  }
+  stopClickLoop() {
+    this.clickLoop();
+  }
+  getObjectAt(vec3) {
+    let result = void 0;
+    for (let index = 0; index < this.rawBlocks.length; index++) {
+      const x = this.rawBlocks[index];
+      const pos2 = { x: vec3.pos.x, y: vec3.pos.y, z: vec3.pos.z };
+      if (isEqual(x.pos, pos2)) {
+        result = x;
+      }
+    }
+    return result;
+  }
+};
+
+// entity.js
+var entity = class {
+  constructor(image, origin2, globalCoords, offset = vec2(0)) {
+    this.vec3 = new Vec3(globalCoords[0], globalCoords[1], globalCoords[2]);
+    this.offset = offset;
+    this.sprite = add([
+      sprite(image),
+      scale(0.5),
+      z(this.vec3.z + 1),
+      pos(vec2(this.vec3.screenPos.x, this.vec3.screenPos.y).add(offset)),
+      origin2
+    ]);
+  }
+  getSprite() {
+    return this.sprite;
+  }
+  move(vec) {
+    this.sprite.pos = vec2(vec.screenPos.x, vec.screenPos.y).add(this.offset);
+    this.vec3 = vec;
+  }
+};
+
+// player.js
+var Player = class extends entity {
+  constructor(image) {
+    super(image, origin("bot"), [10, 0, 10], vec2(32, 20));
+    this.speed = 0.3;
+  }
+  getPos() {
+    return this.vec3;
+  }
+};
+
+// events.js
+var loadEvents = () => {
+  document.addEventListener("movement", (e) => {
+    if (!e.detail.level.getObjectAt(e.detail.to))
+      e.preventDefault();
+  });
 };
 
 // game.js
 no({
   background: [0, 0, 0]
 });
-focus();
-loadAssets();
-loader();
+loadSprite("player", "sprites/player.png");
+var data = await levelLoader("new_level");
+var player = new Player("player");
+loadEvents();
+var level_one = new Level("level_one", data, player);

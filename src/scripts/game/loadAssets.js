@@ -1,3 +1,3 @@
-export const loadAssets = () => {
-    loadSprite("block", "sprites/tile.png")
-}
+// export const loadAssets = () => {
+//     loadSprite("block", "sprites/tile.png")
+// }

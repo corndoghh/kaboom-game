@@ -1,59 +1,16 @@
-import { block } from "./classes/object"
-import { Vec3 } from "./classes/vec3"
+export const levelLoader = async (level) => {
+    const path = `/levels/${level}`
+    await loadSprite(`${level}_image`, path+"/image.png")
+    const blocks = await (await fetch(path+"/blocks.json")).json()
+    const rawBlocks = await (await fetch(path+"/rawBlockData.json")).json()
 
+    const blockImageArray = []
+    blocks.forEach((x) => {if (!blockImageArray.includes(x.image)) { blockImageArray.push(x.image) } })
 
-export const loader = async (level) => {
-    loadSprite("static", "/levels/image.png");
+    if (blockImageArray.length > 0) {
+        await new Promise(async (r, _j) => { blockImageArray.forEach(async (x, i) => { await loadSprite(x, `sprites/${x}.png`); if (i == blockImageArray.length-1) { r() } }) })
+    }
 
-    const response = await fetch("/levels/level.json")
-    const data = await response.json();
-    // const response = await fetch('/load', {
-    //     method: 'POST',
-    //     headers: {
-    //         'Accept': 'application/json',
-    //         'Content-Type': 'application/json'
-    //     },
-    //     body: JSON.stringify({ "file": "level" })
-    // })
-
-    // const data = await response.json();
-    // console.log(data);
-
-    const staticImage = add([
-        sprite("static"),
-        pos(0,0)
-    ])
-
-
-    wait(0.01, () => {
-        staticImage.pos.x -= (staticImage.width - width()) 
-        staticImage.pos.y -= (staticImage.height - height())
-    });
-    
-
-    [...data].forEach((e) => {
-        new block(e.image, new Vec3(e.pos.x, e.pos.y, e.pos.z))
-    })
-
+    //await loadSprite(blockImageArray[0], `sprites/${blockImageArray[0]}.png`)
+    return { image: `${level}_image`, blocks, rawBlocks }
 }
-
-// const data = fetch('/load', {
-//     method: 'POST',
-//     headers: {
-//         'Accept': 'application/json',
-//         'Content-Type': 'application/json'
-//     },
-//     body: JSON.stringify({ "file": "level" })
-// }).then(response => {
-//     if (response.ok) {
-//         return response.json()
-//     }
-//     return Promise.reject(Error("error"))
-// }).catch(error => {return Promise.reject(Error(error.message))})
-
-// data.then((e) => {
-//     [...e.body].forEach((e) => {
-//         new block(e.image, e.pos)
-//     })
-// })
-
