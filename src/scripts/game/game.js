@@ -1,37 +1,19 @@
 import kaboom from "kaboom";
-import { GameObject } from "./classes/object"
-import { Vec3 } from "./classes/vec3"
-import { animationCycle, tileSize } from "./GlobalVarTracker";
+import { levelLoader } from "./levelLoader";
+import { Level } from "./level"
+import { Player } from "./player";
+import { loadEvents } from "./events"
 
-kaboom()
+kaboom({
+    background: [0,0,0]
+})
 
-loadSprite("block", "sprites/block.png")
+loadSprite("player", "sprites/player.png")
 
-// const ob = new GameObject("block", new Vec3(1,1,1), {
-//     anim: {by: new Vec3(1,0,1), time: 1}  
-// })
-const ob2 = new GameObject("block", new Vec3(0,0,0), {hello: "hi"})
-console.log(new Vec3(1,1,1))
-console.log(new Vec3(1,0,1))
-console.log(new Vec3(0,1,1))
+const data = await levelLoader("new_level")
 
+const player = new Player("player")
 
+loadEvents()
 
-// add([
-//     sprite("block"),
-//     pos(new Vec3(1,0,-1).screenPos.x,new Vec3(1,0,-1).screenPos.y),
-//     z(new Vec3(1,0,-1).z),
-//     scale(tileSize/32)
-// ])
-// add([
-//     sprite("block"),
-//     pos(new Vec3(0,-1,-1).screenPos.x,new Vec3(0,-1,-1).screenPos.y),
-//     z(new Vec3(0,-1,-1).z),
-//     scale(tileSize/32)
-
-// ])
-
-
-
-
-
+const level_one = new Level("level_one", data, player)

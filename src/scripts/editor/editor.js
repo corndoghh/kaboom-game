@@ -1,144 +1,141 @@
 import kaboom from "kaboom";
+import { destroyObject, createObject, saveLevel, updateBlockOpacity, isOccupied } from "./blocks"
+import { isEqual } from "../globalScripts/functions";
+import { loadAssets } from "./loadAssets"
+import { screenToGlobal } from "../globalScripts/vec3"
+import { gui } from "../globalScripts/gui"
+import { Vec3 } from "../globalScripts/vec3"
+import { selectorScreen } from "./levelSelector"
 
 kaboom({
-    background: [ 0, 0, 0, ]
+    background: [0,0,0]
 })
 
-const YLevel = 0
+loadAssets()
 
-const gridSize = {x: 50, y: 3}
+focus()
 
+const level = await selectorScreen();
 
-const drawGridSquare = (dX, dY) => {
-    const x = ((dX - dY) * 32) + (width()/2) + ((gridSize.y - gridSize.x) * 16 )
-    const y = (((dX + dY) * 0.5) * 32) + (height()/2 + 32) - ((gridSize.y + gridSize.x) * 8)
+// console.log(level)
 
-    // if (dX - dY == 0) {
-    //     console.log(x,y)
-    // }
-
-    //(this.pos.x - this.pos.z) * tileSize, y: ((this.pos.x + this.pos.z - this.pos.y*2) * 0.5) * tileSize
-
-    //const topPoint = y - 32 
-
-    drawLine({
-        p1: vec2(x, y),
-        p2: vec2(x + 32, y - 16),
-        color: rgb(0, 0, 255),
-    })
-    drawLine({
-        p1: vec2(x + 32, y - 16),
-        p2: vec2(x, y - 32),
-        color: rgb(0, 0, 255),
-    })
-    drawLine({
-        p1: vec2(x, y - 32),
-        p2: vec2(x - 32, y - 16),
-        color: rgb(0, 0, 255),
-    })
-    drawLine({
-        p1: vec2(x - 32, y - 16),
-        p2: vec2(x, y),
-        color: rgb(0, 0, 255),
-    })
-
-} 
-
-onDraw(() => {
-    let count = 0
-    for (let i = 0; i < gridSize.y; i++) {
-        for (let j = 0; j < gridSize.x; j++) {
-            drawGridSquare(j, i)
-            count++;
-        }
-        //drawGridSquare(i, -i)
-    }
-    // console.log(count)
+const session = level.session;
+if (!level.new) { level.rawBlockData.forEach((x) => { createObject(new Vec3(x.coords.x, x.coords.y, x.coords.z)) }) }
 
 
+ 
+const tools = new gui(
+    [width() - 40, 120],
+    [20, 20],
+    0.5,
+    99,
+    true,
+)
 
-    // // drawGridSquare(0,0)
-    // // drawGridSquare(2,-2)
+export let toggleReal = false;
 
+const floodFill = (tempCoords) => {
+    const coords = new Vec3(tempCoords.pos.x, tempCoords.pos.y, tempCoords.pos.z)
 
-    // drawGridSquare(1,-1)
-    // drawGridSquare(1,1)
-    // drawGridSquare(1,0)
-
-    // drawGridSquare(2,-1)
-    // drawGridSquare(2,1)
-    // drawGridSquare(2,0)
-
-
-
-
-    // 0 -1 
-    
-    // drawGridSquare(1.5, 1.5)
-    drawLine({
-        p1: vec2(width()/2, height()/2),
-        p2: vec2(width()/2, 0),
-        color: rgb(0, 0, 255),
-    })
-    drawLine({
-        p1: vec2(width()/2, height()/2),
-        p2: vec2(width()/2, height()),
-        color: rgb(0, 0, 255),
-    })
-    drawLine({
-        p1: vec2(width()/2, height()/2),
-        p2: vec2(0, height()/2),
-        color: rgb(0, 0, 255),
-    })
-    drawLine({
-        p1: vec2(width()/2, height()/2),
-        p2: vec2(width(), height()/2),
-        color: rgb(0, 0, 255),
-    })
-    // drawLine({
-    //     p1: vec2(32, 0),
-    //     p2: vec2(0, 16),
-    //     color: rgb(0, 0, 255),
-    // })
-})
-
-let clickedPos = vec2(0)
-
-onUpdate(() => {
-
-    if (!isKeyDown("shift")) { 
-        if (isMouseDown()) {
-            let mX = mousePos().x - (width()/2) - ((gridSize.y - gridSize.x) * 16 )
-            let mY = mousePos().y - (height()/2 + 32) + ((gridSize.y + gridSize.x) * 8)
-
-            const y = ((mX - (mY*2))/-2)
-            const x = mX+y
-            console.log(x / 32, y / 32)
-
-        }
-        return
-     } 
-
-    onClick(() => {
-        clickedPos = mousePos()
-    })
-    
-    
-    
-    if (isMouseDown()) {
-        const newVec = clickedPos.sub(mousePos())
-        clickedPos = mousePos()
-        camPos(camPos().add(newVec.scale(1/camScale().x)))
-        //camPos(mousePos().x, -mousePos().y)
-        // drawLine({
-        //     p1: clickedPos,
-        //     p2: mousePos(),
-        //     color: rgb(0, 0, 255),
-        // })
-
+    let hit = false
+    while (!hit) {
+        if (isOccupied(coords) || (coords.screenPos.x > width() || coords.screenPos.y > height() || coords.screenPos.x < 0 || coords.screenPos.y < 0)) { hit = true; break }
+        createObject(structuredClone(coords))
+        coords.add(1,0,0)
     }
 
+}
+
+const createCircle = (radius, pos) => {
+    for (let i = pos.x; i < radius+pos.x; i++) {
+        for (let j = pos.z; j < radius+pos.z; j++) {
+            createObject(new Vec3(i, yLevel, j))
+        }
+
+    }
+}
+
+const changeTool = (tool) => {
+    lastMouseCoords = new Vec3(0,0,0)
+    if (tool === currentTool) return
+    currentTool = tool
+
+}
+
+const toolSet = ["brush", "bucket", "square", "circle", "rubber", "line"]
+let currentTool = toolSet[0]
+
+//adding the tools to the gui
+toolSet.forEach((e, i) => { tools.addObj(sprite(e), [(100/toolSet.length*0.5) * (2*i) + 8, 50], 0.2, () => changeTool(e)) })
+// tools.addObj(toolSet[0], [(100/4*0.5) * (0+1) ,50], () => console.log("brushing"))
+// 1
+// tools.addObj(toolSet[1], [(100/4*0.5) * (0+1+2) ,50], () => console.log("filling"))
+// 3
+// // tools.addObj(toolSet[0], [55,50], () => console.log("filling"))
+
+// tools.addObj(toolSet[1], [(100/4*0.5)*(0+2+3),50], () => console.log("filling"))
+// 5
+// tools.addObj(toolSet[0], [(100/4*0.5)*(0+3+4),50], () => console.log("filling"))
+// 7
+
+// -2+2n
+
+
+let yLevel = 0
+let lastMouseCoords = new Vec3(0,0,0)
+
+onKeyPress("shift", () => { if (currentTool == "brush") { changeTool("rubber") } else if (currentTool == "rubber") { changeTool("brush") } })
+
+
+//Painting canvis
+onMouseDown(() => {
+
+
+    if (tools.clicked(mousePos())) { return }
+
+    const coords = screenToGlobal(mousePos())
+    //console.log(coords.z)
+    coords.add(0, yLevel, 0)
+
+    if (isEqual(lastMouseCoords, coords)) { return }
+    lastMouseCoords = coords
+    console.log("a")
+
+
+    switch (currentTool)
+    {
+        case "brush": createObject(coords); break
+        case "bucket": floodFill({...coords}); break
+        case "square": break
+        case "circle": createCircle(5, coords.pos); break
+        case "rubber": destroyObject(coords); break
+        case "line": break
+    }
+
+
 })
 
-onKeyPress("=", () => { camScale(camScale().add(1)) } )
-onKeyPress("-", () => { if (camScale().sub(1).x > 0) {camScale(camScale().sub(1))}  } )
+onKeyPress("s", () => {
+    if (!tools.gui.hidden) { tools.toggleGui() }
+    saveLevel(session)
+
+})
+
+onKeyPress("=", () => {
+    updateBlockOpacity(yLevel, 0.40)
+    yLevel++;
+})
+onKeyPress("-", () => {
+    yLevel-- 
+    updateBlockOpacity(yLevel, 1)
+})
+
+
+onKeyPress("b", () => {
+    tools.toggleGui()
+})
+
+onKeyPress("g", () => {
+    toggleReal = !toggleReal
+})
+
