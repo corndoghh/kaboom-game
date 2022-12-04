@@ -103,6 +103,7 @@ export class Level {
     }
 
     getObjectAt(vec3) { return this.getXat(vec3, this.rawBlocks) }
+    a
 
     getEntityAt(vec3) { return this.entites.filter((x) => x.vec3 == this.getXat(vec3, this.entites.filter((x) => x != this.player).map((x) => x.vec3)) ) }
 
