@@ -17,7 +17,14 @@ export class Entity {
     getSprite() { return this.sprite }
 
 
-    move(vec) { this.sprite.pos = vec2(vec.screenPos.x, vec.screenPos.y).add(this.offset); this.vec3 = vec } 
+    moveTo(vec) { this.sprite.pos = vec2(vec.screenPos.x, vec.screenPos.y).add(this.offset); this.vec3 = vec } 
+
+    moveBy(vec) {
+        const vec3 = vec
+        vec3.add(this.vec3); this.vec3 = vec3;
+        this.sprite.pos += vec2(vec.screenPos.x, vec.screenPos.y)
+        console.log(this.sprite.pos)
+    }
 
     destroy() {
         this.sprite.destroy()

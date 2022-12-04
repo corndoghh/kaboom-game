@@ -2795,7 +2795,6 @@ var Level = class {
     this.entites = [player2];
     items.forEach((x) => this.entites.push(x));
     enemies.forEach((x) => this.entites.push(x));
-    console.log(this.entites);
     if (this.blocks != null) {
       this.blocks.forEach((x) => new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image));
     }
@@ -2849,7 +2848,6 @@ var Level = class {
       if (x == void 0)
         continue;
       const pos2 = { x: vec3.pos.x, y: vec3.pos.y, z: vec3.pos.z };
-      console.log(x.pos, pos2);
       if (isEqual(x.pos, pos2)) {
         result = x;
         break;
@@ -2881,9 +2879,16 @@ var Entity = class {
   getSprite() {
     return this.sprite;
   }
-  move(vec) {
+  moveTo(vec) {
     this.sprite.pos = vec2(vec.screenPos.x, vec.screenPos.y).add(this.offset);
     this.vec3 = vec;
+  }
+  moveBy(vec) {
+    const vec3 = vec;
+    vec3.add(this.vec3);
+    this.vec3 = vec3;
+    this.sprite.pos += vec2(vec.screenPos.x, vec.screenPos.y);
+    console.log(this.sprite.pos);
   }
   destroy() {
     this.sprite.destroy();
@@ -2897,7 +2902,13 @@ var Player = class extends Entity {
     this.speed = 0.3;
   }
   walk(vec3) {
-    this.move(vec3);
+    const diffrence = this.getPos();
+    diffrence.sub(vec3);
+    diffrence.multiplier(this.speed);
+    console.log(diffrence);
+    const cancelUpdate = onUpdate(() => {
+      this.moveBy(diffrence);
+    });
   }
   getPos() {
     return this.vec3;

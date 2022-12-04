@@ -25,7 +25,6 @@ export class Level {
         enemies.forEach((x) => this.entites.push(x))
 
 
-        console.log(this.entites)
 
 
 
@@ -96,7 +95,6 @@ export class Level {
             const x = y[index];
             if (x == undefined) continue;
             const pos = {x: vec3.pos.x, y: vec3.pos.y, z: vec3.pos.z}
-            console.log(x.pos, pos)
             if (isEqual(x.pos, pos)) { result = x; break}
         }
         return result
