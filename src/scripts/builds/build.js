@@ -2902,13 +2902,7 @@ var Player = class extends Entity {
     this.speed = 0.3;
   }
   walk(vec3) {
-    const diffrence = this.getPos();
-    diffrence.sub(vec3);
-    diffrence.multiplier(this.speed);
-    console.log(diffrence);
-    const cancelUpdate = onUpdate(() => {
-      this.moveBy(diffrence);
-    });
+    this.moveTo(vec3);
   }
   getPos() {
     return this.vec3;
@@ -2926,8 +2920,8 @@ var loadEvents = () => {
 
 // item.js
 var Item = class extends Entity {
-  constructor(image) {
-    super(image, origin("top"), [10, 0, 20], [30, -15]);
+  constructor(image, pos2) {
+    super(image, origin("top"), pos2, [30, -15]);
     this.getSprite().scale = 0.07;
   }
 };
@@ -2938,8 +2932,13 @@ no({
 });
 loadSprite("player", "sprites/player.png");
 loadSprite("pick", "sprites/pick.png");
+loadSprite("axe", "sprites/axe.png");
+loadSprite("bow", "sprites/bow.png");
+loadSprite("bad", "sprites/bad.png");
 var data = await levelLoader("new_level");
 var player = new Player("player");
-var item = new Item("pick");
+var item = new Item("pick", [6, 0, 27]);
+var a2 = new Item("axe", [5, 0, 10]);
+var b2 = new Item("bow", [7, 0, 20]);
 loadEvents();
-var level_one = new Level("level_one", data, player, [], [item]);
+var level_one = new Level("level_one", data, player, [], [item, a2, b2]);

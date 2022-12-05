@@ -31,15 +31,16 @@ export class Player extends Entity  {
     // cancelMovement() { this.movementLoop() }
 
     walk(vec3) {
-        const diffrence = this.getPos()
-        diffrence.sub(vec3)
-        diffrence.multiplier(this.speed)
-        console.log(diffrence)
-        const cancelUpdate = onUpdate(() => {
-            this.moveBy(diffrence)
+        this.moveTo(vec3)
+        // const diffrence = this.getPos()
+        // diffrence.sub(vec3)
+        // diffrence.multiplier(this.speed)
+        // console.log(diffrence)
+        // const cancelUpdate = onUpdate(() => {
+        //     this.moveBy(diffrence)
             
             
-        })
+        // })
     }
 
     getPos() { return this.vec3 }

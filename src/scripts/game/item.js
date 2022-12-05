@@ -1,8 +1,8 @@
 import { Entity } from "./entity"
 
 export class Item extends Entity {
-    constructor(image) {
-        super(image, origin("top"), [10,0,20], [30, -15])
+    constructor(image, pos) {
+        super(image, origin("top"), pos, [30, -15])
 
         this.getSprite().scale = 0.07
     }
