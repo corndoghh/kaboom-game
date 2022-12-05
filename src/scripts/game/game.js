@@ -17,6 +17,9 @@ const data = await levelLoader("new_level")
 
 const player = new Player("player")
 const item = new Item("pick")
+new Item("axe")
+new Item("bow")
+
 
 
 
