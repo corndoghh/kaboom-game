@@ -1,6 +1,7 @@
 import { Entity } from "./entity";
 import { screenToGlobal } from "../globalScripts/vec3";
 import { Vec3 } from "../globalScripts/vec3";
+import { isEqual } from "../globalScripts/functions";
 
 
 
@@ -9,8 +10,8 @@ export class Player extends Entity  {
     constructor(image) {
         super(image, origin("bot"), [10,0,10], vec2(32, 20))
 
-        //blocks per frame 
-        this.speed = 0.3
+        //blocks per second 
+        this.speed = 2
 
 
         //this.startMovement()
@@ -30,17 +31,35 @@ export class Player extends Entity  {
 
     // cancelMovement() { this.movementLoop() }
 
-    walk(vec3) {
-        this.moveTo(vec3)
-        // const diffrence = this.getPos()
-        // diffrence.sub(vec3)
-        // diffrence.multiplier(this.speed)
-        // console.log(diffrence)
-        // const cancelUpdate = onUpdate(() => {
-        //     this.moveBy(diffrence)
-            
-            
-        // })
+    walk(vec) {
+        const from = Object.assign({}, this.getPos().pos)
+        const to = vec.pos
+        const distanceToTraval = {x: (to.x - from.x), y: (to.y - from.y), z: (to.z - from.z)}
+        const angle = Math.atan( (from.x - to.x) / (from.z - to.z) )
+        console.log(angle / (Math.PI/180))
+        const distance =  Math.sin(angle) + Math.cos(angle)
+        const percentage = { x: +(Math.sin(angle) / distance).toFixed(3), z: +(Math.cos(angle) / distance).toFixed(3) }
+        
+        console.log(distanceToTraval)
+
+
+        const directionMove = new Vec3(this.speed * percentage.x, 0, this.speed * percentage.z)
+
+        console.log(percentage)
+
+        console.log(this.getPos().pos.x)
+
+        const cancelUpdate = onUpdate(() => {
+            if (from.z + distanceToTraval.z <= this.getPos().pos.z && from.x + distanceToTraval.x <= this.getPos().pos.x) {
+                this.vec3 = vec
+                cancelUpdate()
+                return
+            } 
+            const smooth = dt()
+            this.getPos().add(directionMove.pos.x * smooth , directionMove.pos.y * smooth, directionMove.pos.z * smooth)
+            this.moveTo(this.getPos())
+        }); 
+
     }
 
     getPos() { return this.vec3 }

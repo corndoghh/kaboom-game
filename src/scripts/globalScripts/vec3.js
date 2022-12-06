@@ -8,7 +8,7 @@ export class Vec3 {
         this.update()
     }
 
-    multiplier(x) {this.pos.x *= x, this.pos.y *= x, this.pos.z *= x; this.update() }
+    multiplier(x) { this.pos.x *= x, this.pos.y *= x, this.pos.z *= x; this.update() }
 
     add(x,y,z) { this.pos.x += x; this.pos.y += y; this.pos.z += z; this.update() }
 
