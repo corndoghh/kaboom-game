@@ -41,6 +41,15 @@ export class Player extends Entity  {
         document.removeEventListener("inventoryEvent", handler)
     }
 
+    equipt(index) {
+        const item = [...this.inventory.getItems().keys()][index]
+        this.inventory.editObj(index, item)
+
+        
+
+
+    }
+
 
 
     // startMovement() {
