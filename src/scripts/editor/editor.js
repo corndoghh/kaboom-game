@@ -6,6 +6,8 @@ import { screenToGlobal } from "../globalScripts/vec3"
 import { gui } from "../globalScripts/gui"
 import { Vec3 } from "../globalScripts/vec3"
 import { selectorScreen } from "./levelSelector"
+import { createItem } from "./item";
+import { createEntity } from "./entity";
 
 kaboom({
     background: [0,0,0]
@@ -22,11 +24,39 @@ const level = await selectorScreen();
 const session = level.session;
 if (!level.new) { level.rawBlockData.forEach((x) => { createObject(new Vec3(x.coords.x, x.coords.y, x.coords.z)) }) }
 
+export let currentBlock = "grass"
+export let currentItem = null;
+export let currentEnity = null;
 
  
 const tools = new gui(
     [width() - 40, 120],
     [20, 20],
+    0.5,
+    99,
+    true,
+)
+
+const blocks = new gui (
+    [width() - 40, 120],
+    [20, 140],
+    0.5,
+    99,
+    true,
+)
+
+
+const items = new gui (
+    [width() - 40, 120],
+    [20, 260],
+    0.5,
+    99,
+    true,
+)
+
+const entites = new gui (
+    [width() - 40, 120],
+    [20, 380],
     0.5,
     99,
     true,
@@ -63,10 +93,18 @@ const changeTool = (tool) => {
 }
 
 const toolSet = ["brush", "bucket", "square", "circle", "rubber", "line"]
+const blockSet = ["grass", "snow"]
+const itemsSet = ["bow", "axe", "pick"]
+const entitySet = ["enemy", "player", "end"]
+
 let currentTool = toolSet[0]
 
 //adding the tools to the gui
 toolSet.forEach((e, i) => { tools.addObj(sprite(e), [(100/toolSet.length*0.5) * (2*i) + 8, 50], 0.2, () => changeTool(e)) })
+blockSet.forEach((e, i) => { blocks.addObj(sprite(e), [(100/blockSet.length*0.5) * (2*i) + 8, 50], 1, () => { currentEnity = null; currentItem = null; currentBlock = e } ) })
+itemsSet.forEach((e, i) => { items.addObj(sprite(e), [(100/itemsSet.length*0.5) * (2*i) + 8, 50], 0.2, () => { currentEnity = null; currentItem = e; currentBlock = null }) })
+entitySet.forEach((e, i) => { entites.addObj(sprite(e), [(100/entitySet.length*0.5) * (2*i) + 8, 50], 0.2, () => { currentEnity = e; currentItem = null; currentBlock = null }) })
+
 // tools.addObj(toolSet[0], [(100/4*0.5) * (0+1) ,50], () => console.log("brushing"))
 // 1
 // tools.addObj(toolSet[1], [(100/4*0.5) * (0+1+2) ,50], () => console.log("filling"))
@@ -92,6 +130,10 @@ onMouseDown(() => {
 
 
     if (tools.clicked(mousePos())) { return }
+    if (blocks.clicked(mousePos())) { return }
+    if (items.clicked(mousePos())) { return }
+    if (entites.clicked(mousePos())) { return }
+
 
     const coords = screenToGlobal(mousePos())
     //console.log(coords.z)
@@ -102,15 +144,31 @@ onMouseDown(() => {
     console.log("a")
 
 
-    switch (currentTool)
+    if (currentBlock != null)
     {
-        case "brush": createObject(coords); break
-        case "bucket": floodFill({...coords}); break
-        case "square": break
-        case "circle": createCircle(5, coords.pos); break
-        case "rubber": destroyObject(coords); break
-        case "line": break
+        switch (currentTool)
+        {
+            case "brush": createObject(coords); break
+            case "bucket": floodFill({...coords}); break
+            case "square": break
+            case "circle": createCircle(5, coords.pos); break
+            case "rubber": destroyObject(coords); break
+            case "line": break
+        }
+        return
     }
+
+    if (currentItem != null)
+    {
+        createItem(coords)
+        return
+    }
+    
+    if (currentEnity != null)
+    {
+        createEntity(coords, currentEnity)
+    }
+
 
 
 })
@@ -131,8 +189,17 @@ onKeyPress("-", () => {
 })
 
 
-onKeyPress("b", () => {
+onKeyPress("t", () => {
     tools.toggleGui()
+})
+onKeyPress("b", () => {
+    blocks.toggleGui()
+})
+onKeyPress("e", () => {
+    entites.toggleGui()
+})
+onKeyPress("i", () => {
+    items.toggleGui()
 })
 
 onKeyPress("g", () => {

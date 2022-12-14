@@ -1,5 +1,7 @@
-import { toggleReal } from "./editor";
+import { currentBlock, currentItem, toggleReal } from "./editor";
 import { isEqual } from "../globalScripts/functions";
+import { getItems, item } from "./item";
+import { getEntites } from "./entity";
 
 const blocks = new Map()
 
@@ -87,7 +89,8 @@ export const isOccupied = (coords) => {
     return returnVal
 }
 
-export const createObject = (vec3) => { new block("block", vec3, toggleReal) }
+export const createObject = (vec3) => { new block(currentBlock, vec3, toggleReal) }
+
 
 export const saveLevel = (session) => {
 
@@ -102,8 +105,15 @@ export const saveLevel = (session) => {
 
     const savedBlocks = rawBlockData.filter((x) => x.real)
 
+    const items = [...getItems().values()];
+    const entites = [...getEntites().values()];
 
-    console.log(rawBlockData, savedBlocks)
+
+    const rawItemData = items.map((ob) => { ob.sprite.opacity = 0; return {pos: ob.globalLocation.pos, image: ob.image}})
+    const rawEntityData = entites.map((ob) => { ob.sprite.opacity = 0; return {pos: ob.globalLocation.pos, image: ob.image, entityType: ob.entityType}})
+
+
+
 
     wait (0.1, () => {
         fetch('/save', {
@@ -112,11 +122,13 @@ export const saveLevel = (session) => {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({session, image: screenshot(), blocks: savedBlocks, rawBlockData }, getCircularReplacer())
+            body: JSON.stringify({session, image: screenshot(), blocks: savedBlocks, rawBlockData, rawItemData, rawEntityData }, getCircularReplacer())
         })
-        .then(blocksValues.forEach((e) => {
-            e.sprite.opacity = 1 
-         }))
+        .then(() => {
+            blocksValues.map((e) => e.sprite.opacity = 1)
+            items.map((e) => e.sprite.opacity = 1)
+            entites.map((e) => e.sprite.opacity = 1)
+        })
     });
 
 

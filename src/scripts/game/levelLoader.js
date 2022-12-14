@@ -3,7 +3,11 @@ export const levelLoader = async (level) => {
     await loadSprite(`${level}_image`, path+"/image.png")
     const blocks = await (await fetch(path+"/blocks.json")).json()
     const rawBlocks = await (await fetch(path+"/rawBlockData.json")).json()
+    const items = await (await fetch(path + "/items.json")).json()
+    const entites = await (await fetch(path + "/entites.json")).json()
 
+
+    console.log(entites, "a")
     const blockImageArray = []
     blocks.forEach((x) => {if (!blockImageArray.includes(x.image)) { blockImageArray.push(x.image) } })
 
@@ -12,5 +16,5 @@ export const levelLoader = async (level) => {
     }
 
     //await loadSprite(blockImageArray[0], `sprites/${blockImageArray[0]}.png`)
-    return { image: `${level}_image`, blocks, rawBlocks }
+    return { image: `${level}_image`, blocks, rawBlocks, items, entites }
 }

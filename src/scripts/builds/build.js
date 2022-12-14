@@ -2686,6 +2686,9 @@ var levelLoader = async (level) => {
   await loadSprite(`${level}_image`, path + "/image.png");
   const blocks = await (await fetch(path + "/blocks.json")).json();
   const rawBlocks = await (await fetch(path + "/rawBlockData.json")).json();
+  const items = await (await fetch(path + "/items.json")).json();
+  const entites = await (await fetch(path + "/entites.json")).json();
+  console.log(entites, "a");
   const blockImageArray = [];
   blocks.forEach((x) => {
     if (!blockImageArray.includes(x.image)) {
@@ -2702,7 +2705,7 @@ var levelLoader = async (level) => {
       });
     });
   }
-  return { image: `${level}_image`, blocks, rawBlocks };
+  return { image: `${level}_image`, blocks, rawBlocks, items, entites };
 };
 
 // ../globalScripts/functions.js
@@ -2753,6 +2756,9 @@ var Vec3 = class {
     this.z = this.pos.x + this.pos.y + this.pos.z;
     this.screenPos = { x: (this.pos.x - this.pos.z) * 32 + width() / 2 - 32, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 * 32 + height() / 2 - (grid + grid) * 8 };
   }
+  distance(vec) {
+    return { x: Math.abs(this.pos.x ** 2 - vec.pos.x ** 2) ** 0.5, y: Math.abs(this.pos.y ** 2 - vec.pos.y ** 2) ** 0.5, z: Math.abs(this.pos.z ** 2 - vec.pos.z ** 2) ** 0.5 };
+  }
   print() {
     console.log(this.pos);
   }
@@ -2770,39 +2776,155 @@ var screenToGlobal = (vec22) => {
 // block.js
 var Block = class {
   constructor(vec3, image) {
+    console.log(vec3.z, "v");
     this.sprite = add([
       sprite(image),
       pos(vec2(vec3.screenPos.x, vec3.screenPos.y)),
       z(vec3.z)
     ]);
   }
+  destroy() {
+    this.sprite.destroy();
+  }
+};
+
+// entity.js
+var Entity = class {
+  constructor(image, origin2, vec3, type, offset = vec2(0)) {
+    this.vec3 = vec3;
+    this.offset = offset;
+    this.type = type;
+    this.sprite = add([
+      sprite(image),
+      scale(0.5),
+      z(this.vec3.z + 2),
+      pos(vec2(this.vec3.screenPos.x, this.vec3.screenPos.y).add(offset)),
+      origin2
+    ]);
+  }
+  getSprite() {
+    return this.sprite;
+  }
+  moveTo(vec) {
+    this.sprite.pos = vec2(vec.screenPos.x, vec.screenPos.y).add(this.offset);
+    this.vec3 = vec;
+    this.sprite.z = vec.z + 1;
+  }
+  destroy() {
+    this.sprite.destroy();
+  }
+};
+
+// enemy.js
+var Enemy = class extends Entity {
+  constructor(image, vec3) {
+    super(image, origin("top"), vec3, "ememy", [30, -15]);
+    this.getSprite().scale = 0.07;
+  }
+};
+
+// item.js
+var Item = class extends Entity {
+  constructor(image, vec3) {
+    super(image, origin("top"), vec3, "item", [30, -15]);
+    this.pointer = new Block(vec3, "grass");
+    console.log(this.pointer);
+    this.getSprite().scale = 0.07;
+  }
+  destroy() {
+    this.sprite.destroy();
+    this.pointer.destroy();
+  }
 };
 
 // level.js
 var levels = /* @__PURE__ */ new Map();
 var Level = class {
-  constructor(name, levelData, player2, enemies, items, end) {
+  constructor(name, levelData, player2) {
+    this.loadLevel(name, levelData, player2);
+  }
+  loadLevel(name, levelData, player2) {
     this.player = player2;
-    this.enemies = enemies;
-    this.items = items;
-    this.end = end;
+    this.items = levelData.items;
+    this.entites = [];
     this.name = name;
     this.blocks = levelData.blocks;
     this.lastClickedBlock = null;
     this.currentObjectClicked = null;
     this.rawBlocks = levelData.rawBlocks;
-    this.entites = [player2];
-    items.forEach((x) => this.entites.push(x));
-    enemies.forEach((x) => this.entites.push(x));
+    this.enemies = levelData.entites.filter((x) => x.entityType == "enemy");
+    this.entites.push(player2);
     if (this.blocks != null) {
       this.blocks.forEach((x) => new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image));
+    }
+    if (this.enemies != null) {
+      this.enemies.forEach((x) => {
+        const a2 = new Enemy(x.image, new Vec3(x.pos.x, x.pos.y, x.pos.z));
+        this.entites.push(a2);
+      });
+    }
+    if (this.items != null) {
+      this.items.forEach((x) => {
+        const a2 = new Item(x.image, new Vec3(x.pos.x, x.pos.y, x.pos.z));
+        this.entites.push(a2);
+      });
     }
     if (levelData.image != null) {
       this.image = add([sprite(levelData.image), z(1)]);
     }
+    console.log(this.entites);
     this.objs = [this.player, this.enemies, this.items, this.blocks, this.image];
     levels.set(name, this);
+    this.startPlayerMovement();
     this.startClickLoop();
+  }
+  startPlayerMovement() {
+    if (this.playerMovement != void 0) {
+      this.playerMovement.forEach((x) => x.call());
+    }
+    this.playerMovement = [];
+    const isMoveKey = (char) => {
+      return char == "a" || char == "w" || char == "s" || char == "d";
+    };
+    const getDir = (char) => {
+      const x = char == "a" ? -0.5 : char == "d" ? 0.5 : char == "s" ? 0.5 : char == "w" ? -0.5 : 0;
+      const y = char == "a" ? 0.5 : char == "d" ? -0.5 : char == "s" ? 0.5 : char == "w" ? -0.5 : 0;
+      return { x, y };
+    };
+    const speed = 6;
+    const dirs = {
+      "a": { x: -speed, y: speed },
+      "d": { x: speed, y: -speed },
+      "w": { x: -speed, y: -speed },
+      "s": { x: speed, y: speed }
+    };
+    for (const [key, value] of Object.entries(dirs)) {
+      const a2 = onKeyDown(key, () => {
+        const requestedLocation = Object.assign({}, this.player.getPos().pos);
+        requestedLocation.x += value.x * dt();
+        requestedLocation.z += value.y * dt();
+        const newLocation = new Vec3(requestedLocation.x, requestedLocation.y, requestedLocation.z);
+        const movement = new CustomEvent("playerMovement", {
+          bubbles: true,
+          cancelable: true,
+          detail: {
+            entity: this.player,
+            from: this.player.getPos(),
+            movement: value,
+            to: requestedLocation,
+            toReal: newLocation.screenPos,
+            level: this
+          }
+        });
+        if (!document.dispatchEvent(movement))
+          return;
+        this.player.moveTo(newLocation);
+      });
+      this.playerMovement.push(a2);
+    }
+  }
+  stopPlayerMovement() {
+    this.playerMovement.forEach((x) => x.call());
   }
   startClickLoop() {
     if (this.clickLoop != null) {
@@ -2858,41 +2980,15 @@ var Level = class {
     return this.getXat(vec3, this.rawBlocks);
   }
   getEntityAt(vec3) {
-    return this.entites.filter((x) => x.vec3 == this.getXat(vec3, this.entites.filter((x2) => x2 != this.player).map((x2) => x2.vec3)));
-  }
-};
-
-// entity.js
-var Entity = class {
-  constructor(image, origin2, globalCoords, offset = vec2(0)) {
-    this.vec3 = new Vec3(globalCoords[0], globalCoords[1], globalCoords[2]);
-    this.offset = offset;
-    this.sprite = add([
-      sprite(image),
-      scale(0.5),
-      z(this.vec3.z + 1),
-      pos(vec2(this.vec3.screenPos.x, this.vec3.screenPos.y).add(offset)),
-      origin2
-    ]);
-  }
-  getSprite() {
-    return this.sprite;
-  }
-  moveTo(vec) {
-    this.sprite.pos = vec2(vec.screenPos.x, vec.screenPos.y).add(this.offset);
-    this.vec3 = vec;
-    this.sprite.z = vec.z + 1;
-  }
-  destroy() {
-    this.sprite.destroy();
+    return this.entites.filter((x) => x.vec3 == this.getXat(vec3, this.entites.map((x2) => x2.vec3)));
   }
 };
 
 // player.js
 var Player = class extends Entity {
   constructor(image) {
-    super(image, origin("bot"), [10, 0, 10], vec2(32, 20));
-    this.speed = 2;
+    super(image, origin("bot"), new Vec3(10, 0, 10), "player", vec2(32, 20));
+    this.speed = 3;
   }
   walk(vec) {
     const from = Object.assign({}, this.getPos().pos);
@@ -2900,7 +2996,7 @@ var Player = class extends Entity {
     const distanceToTraval = { x: to.x - from.x, y: to.y - from.y, z: to.z - from.z };
     const angle = Math.atan((from.x - to.x) / (from.z - to.z));
     console.log(angle / (Math.PI / 180));
-    const distance = Math.sin(angle) + Math.cos(angle);
+    const distance = Math.abs(Math.sin(angle)) + Math.abs(Math.cos(angle));
     const percentage = { x: +(Math.sin(angle) / distance).toFixed(3), z: +(Math.cos(angle) / distance).toFixed(3) };
     console.log(distanceToTraval);
     const directionMove = new Vec3(this.speed * percentage.x, 0, this.speed * percentage.z);
@@ -2923,35 +3019,66 @@ var Player = class extends Entity {
 };
 
 // events.js
+var preventCollision = (con, e) => {
+  if (con) {
+    e.preventDefault();
+    return true;
+  }
+  ;
+  return false;
+};
+var isBlockCollide = (vec, e) => {
+  return e.level.getObjectAt(vec);
+};
+var isItemCollide = (vec, e) => {
+  if (e.level.getEntityAt(vec) != null) {
+    return e.level.getEntityAt(vec).filter((x) => x.type == "item");
+  }
+};
+var moveEvent = (fullEvent) => {
+  const e = fullEvent.detail;
+  const vec = new Vec3(Math.round(e.to.x + 0.1), Math.round(e.to.y + 0.1), Math.round(e.to.z + 0.1));
+  const realBlock = screenToGlobal(e.toReal);
+  realBlock.add(1, 0, 0);
+  switch (e.entity.type) {
+    case "player": {
+      if (preventCollision(!isBlockCollide(vec, e), fullEvent)) {
+        return true;
+      }
+      vec.add(0, 1, 0);
+      if (preventCollision(isBlockCollide(vec, e), fullEvent)) {
+        return true;
+      }
+      const item = isItemCollide(realBlock, e)[0];
+      if (item) {
+        item.destroy();
+      }
+    }
+    case "enemy": {
+    }
+  }
+};
 var loadEvents = () => {
   document.addEventListener("movement", (e) => {
     if (!e.detail.level.getObjectAt(e.detail.to)) {
       e.preventDefault();
     }
   });
-};
-
-// item.js
-var Item = class extends Entity {
-  constructor(image, pos2) {
-    super(image, origin("top"), pos2, [30, -15]);
-    this.getSprite().scale = 0.07;
-  }
+  document.addEventListener("playerMovement", moveEvent);
 };
 
 // game.js
 no({
   background: [0, 0, 0]
 });
-loadSprite("player", "sprites/player.png");
-loadSprite("pick", "sprites/pick.png");
-loadSprite("axe", "sprites/axe.png");
-loadSprite("bow", "sprites/bow.png");
+await loadSprite("player", "sprites/player.png");
+await loadSprite("enemy", "sprites/enemy.png");
+await loadSprite("pick", "sprites/items/pick.png");
+await loadSprite("axe", "sprites/items/axe.png");
+await loadSprite("bow", "sprites/items/bow.png");
+await loadSprite("tile", "sprites/snow.png");
 loadSprite("bad", "sprites/bad.png");
-var data = await levelLoader("new_level");
+var data = await levelLoader("test");
 var player = new Player("player");
-var item = new Item("pick", [6, 0, 27]);
-var a2 = new Item("axe", [5, 0, 10]);
-var b2 = new Item("bow", [7, 0, 20]);
 loadEvents();
-var level_one = new Level("level_one", data, player, [], [item, a2, b2]);
+var level_one = new Level("level_one", data, player);

@@ -8,10 +8,10 @@ import { isEqual } from "../globalScripts/functions";
 
 export class Player extends Entity  {
     constructor(image) {
-        super(image, origin("bot"), [10,0,10], vec2(32, 20))
+        super(image, origin("bot"), new Vec3(10,0,10), "player", vec2(32, 20))
 
         //blocks per second 
-        this.speed = 2
+        this.speed = 3
 
 
         //this.startMovement()
@@ -37,7 +37,7 @@ export class Player extends Entity  {
         const distanceToTraval = {x: (to.x - from.x), y: (to.y - from.y), z: (to.z - from.z)}
         const angle = Math.atan( (from.x - to.x) / (from.z - to.z) )
         console.log(angle / (Math.PI/180))
-        const distance =  Math.sin(angle) + Math.cos(angle)
+        const distance =  Math.abs(Math.sin(angle)) + Math.abs(Math.cos(angle))
         const percentage = { x: +(Math.sin(angle) / distance).toFixed(3), z: +(Math.cos(angle) / distance).toFixed(3) }
         
         console.log(distanceToTraval)
