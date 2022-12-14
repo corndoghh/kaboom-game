@@ -1,4 +1,6 @@
+import { isEqual } from "../globalScripts/functions";
 import { screenToGlobal, Vec3 } from "../globalScripts/vec3"
+import { level_one } from "./game";
 
 const preventCollision = (con, e) => { if (con) { e.preventDefault(); return true }; return false; } 
 
@@ -12,6 +14,7 @@ const isEndCollide = (vec, e) => {}
 
 
 const moveEvent = (fullEvent) => {
+    if (level_one.player.inventory.isOpen()) { fullEvent.preventDefault(); return true }
     const e = fullEvent.detail
     const vec = new Vec3(Math.round(e.to.x+0.1), Math.round(e.to.y+0.1), Math.round(e.to.z+0.1))
     const realBlock = screenToGlobal(e.toReal)
@@ -23,7 +26,9 @@ const moveEvent = (fullEvent) => {
             if (preventCollision(isBlockCollide(vec, e), fullEvent)) { return true }
 
             const item = isItemCollide(realBlock, e)[0]
-            if (item) { item.destroy() }
+            if (item) {
+                level_one.player.inventory.addItem(item)
+            }
             // const entity = e.level.getEntityAt(realBlock)[0]
             // if (entity != null && entity.type == "item") { entity.destroy() }
 
@@ -46,6 +51,8 @@ export const loadEvents = () => {
         }
 
     })
+
+
 
 
 

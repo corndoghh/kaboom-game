@@ -14,8 +14,8 @@ export class Item extends Entity {
         this.getSprite().scale = 0.07
     }
 
-    destroy() {
-        this.sprite.destroy()
+    destroyItem() {
+        this.destroy()
         this.pointer.destroy()
     }
 }

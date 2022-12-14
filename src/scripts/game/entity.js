@@ -1,9 +1,11 @@
 import { Vec3 } from "../globalScripts/vec3"
+import { level_one } from "./game"
 
 export class Entity {
     constructor(image, origin, vec3, type, offset = vec2(0)) {
         this.vec3 = vec3
         this.offset = offset
+        this.image = image
         this.type = type
         this.sprite = add([
             sprite(image),
@@ -28,6 +30,7 @@ export class Entity {
     // }
 
     destroy() {
+        level_one.entites = level_one.entites.filter((x) => x != this)
         this.sprite.destroy()
     }
     

@@ -2,8 +2,16 @@ import { Entity } from "./entity";
 import { screenToGlobal } from "../globalScripts/vec3";
 import { Vec3 } from "../globalScripts/vec3";
 import { isEqual } from "../globalScripts/functions";
+import { Inventory } from "./inventory";
+import { level_one } from "./game";
 
 
+const handler = (event) => {
+    if (!event.returnValue) return
+    if (event.detail.toggle) level_one.player.inventory.toggle()
+    
+
+}
 
 
 export class Player extends Entity  {
@@ -13,9 +21,26 @@ export class Player extends Entity  {
         //blocks per second 
         this.speed = 3
 
+        this.inventory = new Inventory();
+
 
         //this.startMovement()
+
+
+        this.startInventoryLoop()
+
+
+
     }
+
+    startInventoryLoop() {
+        document.addEventListener("inventoryEvent", handler)
+    }
+
+    stopInventoryLoop() {
+        document.removeEventListener("inventoryEvent", handler)
+    }
+
 
 
     // startMovement() {

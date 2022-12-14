@@ -64,9 +64,10 @@ export class gui {
     }
 
 
+    hideGui(bool) {this.gui.hidden = bool; [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden); [...this.layers.values()].forEach((e) => e.hidden = this.gui.hidden)}
     
 
-    toggleGui() { this.gui.hidden = !this.gui.hidden; [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden); [...this.layers.values()].forEach((e) => e.hidden = this.gui.hidden) }
+    toggleGui() { this.hideGui(!this.gui.hidden) }
 
     addObjFull(obj ,functionCall, parentLayer = "gui") {
         const layer = this.layers.get(parentLayer)

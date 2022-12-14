@@ -35,6 +35,6 @@ const player = new Player("player")
 
 loadEvents()
 
-const level_one = new Level("level_one", data, player)
+export const level_one = new Level("level_one", data, player)
 
 //export const camera = new Camera(level_one, player)

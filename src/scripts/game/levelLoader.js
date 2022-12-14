@@ -6,8 +6,6 @@ export const levelLoader = async (level) => {
     const items = await (await fetch(path + "/items.json")).json()
     const entites = await (await fetch(path + "/entites.json")).json()
 
-
-    console.log(entites, "a")
     const blockImageArray = []
     blocks.forEach((x) => {if (!blockImageArray.includes(x.image)) { blockImageArray.push(x.image) } })
 

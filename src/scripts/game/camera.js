@@ -1,7 +1,5 @@
 
 import { Vec3 } from "../globalScripts/vec3";
-import { camera } from "./game";
-
 const pine = (e) => {
     if (!e.returnValue) return;
 

@@ -5,6 +5,7 @@ import { Block } from "./block";
 import { Enemy } from "./enemy";
 import { Entity } from "./entity";
 import { Item } from "./item";
+import { startKeybinds } from "./keybinds";
 
 const levels = new Map();
 
@@ -13,6 +14,7 @@ const levels = new Map();
 export class Level {
     constructor(name, levelData, player) {
         this.loadLevel(name, levelData, player)
+        startKeybinds()
 
     }
 
@@ -49,7 +51,6 @@ export class Level {
             this.image = add([ sprite(levelData.image), z(1) ])
         }  
 
-        console.log(this.entites)
 
 
         this.objs = [this.player, this.enemies, this.items, this.blocks, this.image]

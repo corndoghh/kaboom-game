@@ -2688,7 +2688,6 @@ var levelLoader = async (level) => {
   const rawBlocks = await (await fetch(path + "/rawBlockData.json")).json();
   const items = await (await fetch(path + "/items.json")).json();
   const entites = await (await fetch(path + "/entites.json")).json();
-  console.log(entites, "a");
   const blockImageArray = [];
   blocks.forEach((x) => {
     if (!blockImageArray.includes(x.image)) {
@@ -2776,7 +2775,6 @@ var screenToGlobal = (vec22) => {
 // block.js
 var Block = class {
   constructor(vec3, image) {
-    console.log(vec3.z, "v");
     this.sprite = add([
       sprite(image),
       pos(vec2(vec3.screenPos.x, vec3.screenPos.y)),
@@ -2793,6 +2791,7 @@ var Entity = class {
   constructor(image, origin2, vec3, type, offset = vec2(0)) {
     this.vec3 = vec3;
     this.offset = offset;
+    this.image = image;
     this.type = type;
     this.sprite = add([
       sprite(image),
@@ -2811,6 +2810,7 @@ var Entity = class {
     this.sprite.z = vec.z + 1;
   }
   destroy() {
+    level_one.entites = level_one.entites.filter((x) => x != this);
     this.sprite.destroy();
   }
 };
@@ -2831,10 +2831,25 @@ var Item = class extends Entity {
     console.log(this.pointer);
     this.getSprite().scale = 0.07;
   }
-  destroy() {
-    this.sprite.destroy();
+  destroyItem() {
+    this.destroy();
     this.pointer.destroy();
   }
+};
+
+// keybinds.js
+var startKeybinds = () => {
+  const openInventory = onKeyPress("e", () => {
+    const inventory = new CustomEvent("inventoryEvent", {
+      bubbles: true,
+      cancelable: true,
+      detail: {
+        toggle: true
+      }
+    });
+    if (!document.dispatchEvent(inventory))
+      return;
+  });
 };
 
 // level.js
@@ -2842,6 +2857,7 @@ var levels = /* @__PURE__ */ new Map();
 var Level = class {
   constructor(name, levelData, player2) {
     this.loadLevel(name, levelData, player2);
+    startKeybinds();
   }
   loadLevel(name, levelData, player2) {
     this.player = player2;
@@ -2872,7 +2888,6 @@ var Level = class {
     if (levelData.image != null) {
       this.image = add([sprite(levelData.image), z(1)]);
     }
-    console.log(this.entites);
     this.objs = [this.player, this.enemies, this.items, this.blocks, this.image];
     levels.set(name, this);
     this.startPlayerMovement();
@@ -2984,11 +2999,159 @@ var Level = class {
   }
 };
 
+// ../globalScripts/gui.js
+var inRegion = (target, vec22, optional) => {
+  if (optional === void 0) {
+    optional = true;
+  }
+  return vec22.x >= target.pos.x && vec22.x <= target.pos.x + target.width && vec22.y >= target.pos.y && vec22.y <= target.pos.y + target.height && optional;
+};
+var gui = class {
+  constructor(rect2, pos2, opacity2, z1, hidden, colour) {
+    this.gui = add([
+      pos(pos2[0], pos2[1]),
+      rect(rect2[0], rect2[1]),
+      outline(1),
+      z(z1),
+      colour,
+      opacity(opacity2)
+    ]);
+    this.gui.hidden = hidden;
+    this.layers = /* @__PURE__ */ new Map();
+    this.objs = /* @__PURE__ */ new Map();
+    this.layers.set("gui", this.gui);
+    this.gui.objs = [];
+    onClick(() => {
+      if (!this.clicked(mousePos())) {
+        return;
+      }
+      [...this.objs.keys()].filter((x) => !x.hidden).forEach((e) => {
+        const e2 = { pos: { x: e.pos.x - e.width / 2, y: e.pos.y - e.height / 2 }, width: e.width, height: e.height };
+        if (inRegion(e2, mousePos())) {
+          this.objs.get(e).call();
+        }
+      });
+    });
+  }
+  clicked(vec22) {
+    return inRegion(this.gui, vec22, !this.gui.hidden);
+  }
+  addLayer(name, rectSize, coords, colour, outline2, zLayer) {
+    const layer = add([
+      pos(this.gui.width * coords[0] / 100 + this.gui.pos.x, this.gui.height * coords[1] / 100 + this.gui.pos.y),
+      rect(this.gui.width * rectSize[0] / 100, this.gui.height * rectSize[1] / 100),
+      colour,
+      outline2,
+      z(zLayer),
+      origin("center")
+    ]);
+    layer.objs = [];
+    this.layers.set(name, layer);
+  }
+  isLayerHidden(layer) {
+    return this.layers.get(layer).hidden;
+  }
+  hideLayer(layer, bool) {
+    this.layers.get(layer).hidden = bool;
+    this.layers.get(layer).objs.forEach((x) => x.hidden = bool);
+  }
+  hideGui(bool) {
+    this.gui.hidden = bool;
+    [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden);
+    [...this.layers.values()].forEach((e) => e.hidden = this.gui.hidden);
+  }
+  toggleGui() {
+    this.hideGui(!this.gui.hidden);
+  }
+  addObjFull(obj, functionCall, parentLayer = "gui") {
+    const layer = this.layers.get(parentLayer);
+    const percentage = [obj.pos.x, obj.pos.y];
+    obj.pos.x = layer.width * obj.pos.x / 100 + layer.pos.x;
+    obj.pos.y = layer.height * obj.pos.y / 100 + layer.pos.y;
+    obj.hidden = layer.hidden;
+    if (percentage[1] > 100) {
+      console.log("out");
+    }
+    this.objs.set(
+      obj,
+      functionCall
+    );
+    layer.objs.push(obj);
+  }
+  addObj(displayed, relativePos, scale2, functionCall, parentLayer = "gui") {
+    const layer = this.layers.get(parentLayer);
+    console.log(layer);
+    const obj = add([
+      displayed,
+      pos(relativePos[0], relativePos[1]),
+      origin("center"),
+      z(layer.z + 1),
+      area()
+    ]);
+    console.log(obj.pos);
+    obj.scale = scale2;
+    wait(0.01, () => {
+      obj.width *= scale2;
+      obj.height *= scale2;
+      this.addObjFull(obj, functionCall, parentLayer);
+    });
+  }
+  remove() {
+    this.gui.destroy();
+    [...this.objs.keys()].forEach((x) => x.destroy());
+    [...this.layers.values()].forEach((x) => x.destroy());
+  }
+};
+
+// inventory.js
+var Inventory = class extends gui {
+  constructor() {
+    super([width() * 0.8, height() * 0.8], [width() / 10, height() / 10], 0.8, 1e3, true, color(105, 105, 105));
+  }
+  open() {
+    this.hideGui(false);
+  }
+  close() {
+    this.hideGui(true);
+  }
+  toggle() {
+    this.toggleGui();
+  }
+  isOpen() {
+    return !this.gui.hidden;
+  }
+  addItem(item) {
+    const image = item.image;
+    item.destroyItem();
+    this.addObj(sprite(image), [10, 10], 0.2, () => {
+      level_one.player.equipt(sprite);
+    });
+    console.log(this.getItems().size, sprite);
+  }
+  getItems() {
+    return this.objs;
+  }
+};
+
 // player.js
+var handler = (event) => {
+  if (!event.returnValue)
+    return;
+  if (event.detail.toggle)
+    level_one.player.inventory.toggle();
+};
 var Player = class extends Entity {
   constructor(image) {
     super(image, origin("bot"), new Vec3(10, 0, 10), "player", vec2(32, 20));
     this.speed = 3;
+    this.inventory = new Inventory();
+    this.startInventoryLoop();
+  }
+  startInventoryLoop() {
+    document.addEventListener("inventoryEvent", handler);
+  }
+  stopInventoryLoop() {
+    document.removeEventListener("inventoryEvent", handler);
   }
   walk(vec) {
     const from = Object.assign({}, this.getPos().pos);
@@ -3036,6 +3199,10 @@ var isItemCollide = (vec, e) => {
   }
 };
 var moveEvent = (fullEvent) => {
+  if (level_one.player.inventory.isOpen()) {
+    fullEvent.preventDefault();
+    return true;
+  }
   const e = fullEvent.detail;
   const vec = new Vec3(Math.round(e.to.x + 0.1), Math.round(e.to.y + 0.1), Math.round(e.to.z + 0.1));
   const realBlock = screenToGlobal(e.toReal);
@@ -3051,7 +3218,7 @@ var moveEvent = (fullEvent) => {
       }
       const item = isItemCollide(realBlock, e)[0];
       if (item) {
-        item.destroy();
+        level_one.player.inventory.addItem(item);
       }
     }
     case "enemy": {
@@ -3082,3 +3249,6 @@ var data = await levelLoader("test");
 var player = new Player("player");
 loadEvents();
 var level_one = new Level("level_one", data, player);
+export {
+  level_one
+};
