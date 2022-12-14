@@ -32,6 +32,9 @@ export class Level {
 
         this.enemies = levelData.entites.filter((x) => x.entityType == "enemy")
         this.entites.push(player)
+        const tempPlayerPos = levelData.entites.filter((x) => x.entityType == "player")[0].pos
+        this.player.moveTo(new Vec3(tempPlayerPos.x, tempPlayerPos.y, tempPlayerPos.z))
+
 
 
 

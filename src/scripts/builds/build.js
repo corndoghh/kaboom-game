@@ -2870,6 +2870,8 @@ var Level = class {
     this.rawBlocks = levelData.rawBlocks;
     this.enemies = levelData.entites.filter((x) => x.entityType == "enemy");
     this.entites.push(player2);
+    const tempPlayerPos = levelData.entites.filter((x) => x.entityType == "player")[0].pos;
+    this.player.moveTo(new Vec3(tempPlayerPos.x, tempPlayerPos.y, tempPlayerPos.z));
     if (this.blocks != null) {
       this.blocks.forEach((x) => new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image));
     }
@@ -3078,6 +3080,9 @@ var gui = class {
     );
     layer.objs.push(obj);
   }
+  editObj(index, item) {
+    [...this.objs.keys()][index] = item;
+  }
   addObj(displayed, relativePos, scale2, functionCall, parentLayer = "gui") {
     const layer = this.layers.get(parentLayer);
     console.log(layer);
@@ -3123,10 +3128,9 @@ var Inventory = class extends gui {
   addItem(item) {
     const image = item.image;
     item.destroyItem();
-    this.addObj(sprite(image), [10, 10], 0.2, () => {
-      level_one.player.equipt(sprite);
+    this.addObj(sprite(image), [20 * (this.getItems().size % 5) + 10, 20 * Math.floor(this.getItems().size / 5) + 10], 0.2, () => {
+      level_one.player.equipt(this.getItems().size - 1);
     });
-    console.log(this.getItems().size, sprite);
   }
   getItems() {
     return this.objs;
@@ -3152,6 +3156,10 @@ var Player = class extends Entity {
   }
   stopInventoryLoop() {
     document.removeEventListener("inventoryEvent", handler);
+  }
+  equipt(index) {
+    const item = [...this.inventory.getItems().keys()][index];
+    this.inventory.editObj(index, item);
   }
   walk(vec) {
     const from = Object.assign({}, this.getPos().pos);

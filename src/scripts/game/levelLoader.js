@@ -10,7 +10,7 @@ export const levelLoader = async (level) => {
     blocks.forEach((x) => {if (!blockImageArray.includes(x.image)) { blockImageArray.push(x.image) } })
 
     if (blockImageArray.length > 0) {
-        await new Promise(async (r, _j) => { blockImageArray.forEach(async (x, i) => { await loadSprite(x, `sprites/${x}.png`); if (i == blockImageArray.length-1) { r() } }) })
+        await new Promise(async (r, _j) => { blockImageArray.forEach(async (x, i) => { await loadSprite(x, `sprites/${x}.png`); if (i == blockImageArray.length - 1) { r() } }) })
     }
 
     //await loadSprite(blockImageArray[0], `sprites/${blockImageArray[0]}.png`)

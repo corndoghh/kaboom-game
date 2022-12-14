@@ -85,6 +85,10 @@ export class gui {
 
     }
 
+    editObj(index, item) {
+        [...this.objs.keys()][index] = item
+
+    }
 
     addObj(displayed, relativePos, scale, functionCall, parentLayer = "gui") {   
         const layer = this.layers.get(parentLayer)

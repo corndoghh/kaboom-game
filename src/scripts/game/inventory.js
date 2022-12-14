@@ -1,6 +1,5 @@
 import { gui } from "../globalScripts/gui";
 import { level_one } from "./game";
-import { Item } from "./item";
 
 export class Inventory extends gui {
     constructor() {
@@ -19,9 +18,7 @@ export class Inventory extends gui {
     addItem(item) {
         const image = item.image
         item.destroyItem()
-        this.addObj(sprite(image), [10, 10], 0.2, () => { level_one.player.equipt(sprite) } )
-
-        console.log(this.getItems().size, sprite)
+        this.addObj(sprite(image), [20 * (this.getItems().size % 5) + 10, 20 * (Math.floor(this.getItems().size / 5)) + 10], 0.2, () => { level_one.player.equipt(this.getItems().size-1) })
     }
 
     getItems() { return this.objs }

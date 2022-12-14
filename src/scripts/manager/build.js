@@ -2759,6 +2759,9 @@ var gui = class {
     );
     layer.objs.push(obj);
   }
+  editObj(index, item) {
+    [...this.objs.keys()][index] = item;
+  }
   addObj(displayed, relativePos, scale, functionCall, parentLayer = "gui") {
     const layer = this.layers.get(parentLayer);
     console.log(layer);
