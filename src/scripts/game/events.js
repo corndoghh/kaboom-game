@@ -5,11 +5,9 @@ import { level_one } from "./game";
 const preventCollision = (con, e) => { if (con) { e.preventDefault(); return true }; return false; } 
 
 const isPlayerCollide = (vec, e) => { return e.level.getEntityAt(vec).filter((x) => x.type == "player") } 
-const isEnemyCollide = (vec, e) => { return e.level.getEntityAt(vec).filter((x) => x.type == "enemy") }
+const isEnemyCollide = (vec, e) => { return e.level.enemies }
 const isEndCollideSimple = (vec, e) => {
-    level_one.enemies.forEach((x) => {
-        x.sprite
-    })
+    return e.level.entites.filter((x) => x.type == "enemy").filter((q) => vec.x >= q.sprite.pos.x && vec.x <= q.sprite.pos.x + q.sprite.width && vec.y >= q.sprite.pos.y && vec.y <= q.sprite.pos.y + q.sprite.height)
 }
 const isBlockCollide = (vec, e) => { return e.level.getObjectAt(vec) }
 const isItemCollide = (vec, e) => { if (e.level.getEntityAt(vec) != null) { return e.level.getEntityAt(vec).filter((x) => x.type == "item") } }
@@ -27,12 +25,13 @@ const moveEvent = (fullEvent) => {
     console.log(e.entity.type)
     switch (e.entity.type) {
         case "player": {
-            if (preventCollision(!isBlockCollide(vec, e), fullEvent)) { return true }
+            if (preventCollision(!isBlockCollide(vec, e), fullEvent)) { console.log("passed", vec); return true }
             vec.add(0,1,0)
             if (preventCollision(isBlockCollide(vec, e), fullEvent)) { return true }
 
             const item = isItemCollide(realBlock, e)[0]
             if (item) {
+                //item.destroyItem()
                 level_one.player.inventory.addItem(item)
             }
             // const entity = e.level.getEntityAt(realBlock)[0]
@@ -72,10 +71,10 @@ const clickEvent = (event) => {
             break
         }
         case "axe": {
-            const enemy = isEnemyCollide(e.to, e)
+            const enemy = isEndCollideSimple(e.mouseVec, e)
             console.log(enemy)
-            if (enemy) {
-                console.log("kill")
+            if (enemy[0]) {
+                enemy[0].destroy()
             }
             break;
         }

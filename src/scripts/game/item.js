@@ -16,6 +16,6 @@ export class Item extends Entity {
 
     destroyItem() {
         this.destroy()
-        this.pointer.destroy()
+        this.pointer.destroySoft()
     }
 }

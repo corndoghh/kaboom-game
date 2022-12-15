@@ -2789,6 +2789,9 @@ var Block = class {
     level_one.blocks = level_one.blocks.filter((x) => !isEqual(x.pos, this.vec3.pos));
     level_one.rawBlocks = level_one.rawBlocks.filter((x) => !isEqual(x.pos, this.vec3.pos));
     level_one.realBlocks = level_one.realBlocks.filter((x) => x != this);
+    this.destroySoft();
+  }
+  destroySoft() {
     this.sprite.destroy();
   }
 };
@@ -2810,6 +2813,8 @@ var Entity = class {
       pos(vec2(this.vec3.screenPos.x, this.vec3.screenPos.y).add(offset)),
       origin2
     ]);
+    this.sprite.width /= 2;
+    this.sprite.height /= 2;
   }
   getSprite() {
     return this.sprite;
@@ -3066,7 +3071,7 @@ var Item = class extends Entity {
   }
   destroyItem() {
     this.destroy();
-    this.pointer.destroy();
+    this.pointer.destroySoft();
   }
 };
 
@@ -3195,6 +3200,7 @@ var Level = class {
           entity: this.player,
           from: this.player.getPos(),
           to: this.lastClickedBlock,
+          mouseVec: mousePos().add(camPos().sub(width() / 2, height() / 2)),
           level: this
         }
       });
@@ -3241,8 +3247,8 @@ var preventCollision = (con, e) => {
   ;
   return false;
 };
-var isEnemyCollide = (vec, e) => {
-  return e.level.getEntityAt(vec).filter((x) => x.type == "enemy");
+var isEndCollideSimple = (vec, e) => {
+  return e.level.entites.filter((x) => x.type == "enemy").filter((q) => vec.x >= q.sprite.pos.x && vec.x <= q.sprite.pos.x + q.sprite.width && vec.y >= q.sprite.pos.y && vec.y <= q.sprite.pos.y + q.sprite.height);
 };
 var isBlockCollide = (vec, e) => {
   return e.level.getObjectAt(vec);
@@ -3265,6 +3271,7 @@ var moveEvent = (fullEvent) => {
   switch (e.entity.type) {
     case "player": {
       if (preventCollision(!isBlockCollide(vec, e), fullEvent)) {
+        console.log("passed", vec);
         return true;
       }
       vec.add(0, 1, 0);
@@ -3299,10 +3306,10 @@ var clickEvent = (event) => {
       break;
     }
     case "axe": {
-      const enemy = isEnemyCollide(e.to, e);
+      const enemy = isEndCollideSimple(e.mouseVec, e);
       console.log(enemy);
-      if (enemy) {
-        console.log("kill");
+      if (enemy[0]) {
+        enemy[0].destroy();
       }
       break;
     }
@@ -3379,6 +3386,7 @@ var player = new Player("player");
 loadEvents();
 var level_one = new Level("level_one", data, player);
 var camera = new Camera(level_one, player);
+document.title = "8-Bit Adventure";
 export {
   camera,
   level_one

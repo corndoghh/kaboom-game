@@ -17,6 +17,10 @@ export class Entity {
             origin
         ])
 
+        this.sprite.width /= 2
+        this.sprite.height /= 2
+
+
     }
 
     getSprite() { return this.sprite }

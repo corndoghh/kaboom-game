@@ -17,6 +17,10 @@ export class Block {
         level_one.blocks = level_one.blocks.filter((x) => !isEqual(x.pos, this.vec3.pos))
         level_one.rawBlocks = level_one.rawBlocks.filter((x) => !isEqual(x.pos, this.vec3.pos))
         level_one.realBlocks = level_one.realBlocks.filter((x) => x != this)
+        this.destroySoft()
+    }
+
+    destroySoft() {
         this.sprite.destroy()
     }
 }

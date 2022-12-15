@@ -184,6 +184,8 @@ export class Level {
                     entity: this.player,
                     from: this.player.getPos(),
                     to: this.lastClickedBlock,
+                    mouseVec: mousePos().add(camPos().sub(width()/2, height()/2)),
+
                     level: this
                 }
             });
