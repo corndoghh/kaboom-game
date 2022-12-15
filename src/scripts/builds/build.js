@@ -2835,6 +2835,7 @@ var Entity = class {
     this.walkCancel = onUpdate(() => {
       if (vecy3.distance(anotherTempVec) < 0.5) {
         this.walkCancel();
+        this.moveTo(vec);
         const movement = new CustomEvent("playerMovement", {
           bubbles: true,
           cancelable: true,
@@ -3240,6 +3241,9 @@ var preventCollision = (con, e) => {
   ;
   return false;
 };
+var isEnemyCollide = (vec, e) => {
+  return e.level.getEntityAt(vec).filter((x) => x.type == "enemy");
+};
 var isBlockCollide = (vec, e) => {
   return e.level.getObjectAt(vec);
 };
@@ -3295,7 +3299,11 @@ var clickEvent = (event) => {
       break;
     }
     case "axe": {
-      console.log("axeful");
+      const enemy = isEnemyCollide(e.to, e);
+      console.log(enemy);
+      if (enemy) {
+        console.log("kill");
+      }
       break;
     }
     case "bow": {

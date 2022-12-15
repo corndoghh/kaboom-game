@@ -56,7 +56,7 @@ export class Entity {
         const percentage = { x: anotherTempVec.pos.x / total, z: anotherTempVec.pos.z / total }
 
         this.walkCancel = onUpdate(() => {
-            if (vecy3.distance(anotherTempVec) < 0.5) { this.walkCancel();
+            if (vecy3.distance(anotherTempVec) < 0.5) { this.walkCancel(); this.moveTo(vec);
 
             const movement = new CustomEvent('playerMovement', {
                 bubbles: true,

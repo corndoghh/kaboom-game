@@ -6,6 +6,11 @@ const preventCollision = (con, e) => { if (con) { e.preventDefault(); return tru
 
 const isPlayerCollide = (vec, e) => { return e.level.getEntityAt(vec).filter((x) => x.type == "player") } 
 const isEnemyCollide = (vec, e) => { return e.level.getEntityAt(vec).filter((x) => x.type == "enemy") }
+const isEndCollideSimple = (vec, e) => {
+    level_one.enemies.forEach((x) => {
+        x.sprite
+    })
+}
 const isBlockCollide = (vec, e) => { return e.level.getObjectAt(vec) }
 const isItemCollide = (vec, e) => { if (e.level.getEntityAt(vec) != null) { return e.level.getEntityAt(vec).filter((x) => x.type == "item") } }
 const isEndCollide = (vec, e) => {}
@@ -67,7 +72,11 @@ const clickEvent = (event) => {
             break
         }
         case "axe": {
-            console.log("axeful")
+            const enemy = isEnemyCollide(e.to, e)
+            console.log(enemy)
+            if (enemy) {
+                console.log("kill")
+            }
             break;
         }
         case "bow": {
