@@ -3288,7 +3288,7 @@ var clickEvent = (event) => {
       const vec = new Vec3(e.to.pos.x, e.to.pos.y, e.to.pos.z);
       vec.add(1, 1, 1);
       const block = isBlockCollide(vec, e);
-      if (block) {
+      if (block && e.to.distance(e.from) <= 6) {
         level_one.getBlockAt(block.pos)[0].destroy();
         console.log("nice");
       }
