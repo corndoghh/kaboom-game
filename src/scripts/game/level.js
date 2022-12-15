@@ -28,6 +28,7 @@ export class Level {
         this.lastClickedBlock = null
         this.currentObjectClicked = null
         this.rawBlocks = levelData.rawBlocks
+        this.realBlocks = []
 
 
         this.enemies = levelData.entites.filter((x) => x.entityType == "enemy")
@@ -42,7 +43,7 @@ export class Level {
 
         //loading in the map Image and blocks
         if (this.blocks != null) {
-            this.blocks.forEach((x) => new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image))
+            this.blocks.forEach((x) =>  { const a = new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image); this.realBlocks.push(a) } )
         }
         if (this.enemies != null) {
             this.enemies.forEach((x) => { const a = new Enemy(x.image, new Vec3(x.pos.x, x.pos.y, x.pos.z)); this.entites.push(a) })
@@ -174,32 +175,46 @@ export class Level {
         if (this.clickLoop != null) { this.clickLoop() }
 
         this.clickLoop = onClick(() => {
-            this.lastClickedBlock = screenToGlobal(mousePos())
-            if (this.lastClickedBlock.pos.x == this.player.getPos().pos.x && this.lastClickedBlock.pos.y == this.player.getPos().pos.y && this.lastClickedBlock.pos.z == this.player.getPos().pos.z) { this.currentObjectClicked = this.player; return }
-            if (this.currentObjectClicked == this.player) {
+            this.lastClickedBlock = screenToGlobal(mousePos().add(camPos().sub(vec2(width()/2, height()/2))))
+            if (!this.player.inventory.gui.hidden) return;
+            const click = new CustomEvent('customClick', {
+                bubbles: true,
+                cancelable: true,
+                detail: {
+                    entity: this.player,
+                    from: this.player.getPos(),
+                    to: this.lastClickedBlock,
+                    level: this
+                }
+            });
 
-                const movement = new CustomEvent('movement', {
-                    bubbles: true,
-                    cancelable: true,
-                    detail: {
-                        entity: this.player,
-                        from: this.player.getPos(),
-                        to: this.lastClickedBlock,
-                        level: this
-                    }
-                });
+            if (!document.dispatchEvent(click)) return;
+
+            //if (this.lastClickedBlock.pos.x == this.player.getPos().pos.x && this.lastClickedBlock.pos.y == this.player.getPos().pos.y && this.lastClickedBlock.pos.z == this.player.getPos().pos.z) { this.currentObjectClicked = this.player; return }
+            // if (this.currentObjectClicked == this.player) {
+
+            //     const movement = new CustomEvent('movement', {
+            //         bubbles: true,
+            //         cancelable: true,
+            //         detail: {
+            //             entity: this.player,
+            //             from: this.player.getPos(),
+            //             to: this.lastClickedBlock,
+            //             level: this
+            //         }
+            //     });
                 
-                this.currentObjectClicked = null;
+            //     this.currentObjectClicked = null;
 
-                if (!document.dispatchEvent(movement)) return;
+            //     if (!document.dispatchEvent(movement)) return;
                 
-                const entity = this.getEntityAt(movement.detail.to)
+            //     const entity = this.getEntityAt(movement.detail.to)
 
-                if (entity[0] != undefined) entity[0].destroy()
+            //     if (entity[0] != undefined) entity[0].destroy()
 
 
-                this.player.walk(movement.detail.to)
-            }
+            //     this.player.walk(movement.detail.to)
+            // }
             
         })
 
@@ -221,6 +236,10 @@ export class Level {
 
     getObjectAt(vec3) { return this.getXat(vec3, this.rawBlocks) }
 
+    getBlockAt(vec3) { return this.realBlocks.filter((x) => isEqual(x.vec3.pos, vec3)) }
+
     getEntityAt(vec3) { return this.entites.filter((x) => x.vec3 == this.getXat(vec3, this.entites.map((x) => x.vec3)) ) }
+
+    
 
 }
