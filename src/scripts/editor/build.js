@@ -2690,7 +2690,7 @@ var no = a((i = {}) => {
 var functions_exports = {};
 __export(functions_exports, {
   boxInput: () => boxInput2,
-  isEqual: () => isEqual,
+  isEqual: () => isEqual2,
   rawInput: () => rawInput
 });
 var boxInput2 = async (boxText, title, colour = [0, 0, 0, 0.5], isPlaceholder = false, coords = [width() / 2, height() / 2], rectSize = [400, 150]) => {
@@ -2769,7 +2769,7 @@ var rawInput = async (textBox) => {
     });
   });
 };
-function isEqual(obj1, obj2) {
+function isEqual2(obj1, obj2) {
   var props1 = Object.getOwnPropertyNames(obj1);
   var props2 = Object.getOwnPropertyNames(obj2);
   if (props1.length != props2.length) {
@@ -2779,7 +2779,7 @@ function isEqual(obj1, obj2) {
     let val1 = obj1[props1[i]];
     let val2 = obj2[props1[i]];
     let isObjects = isObject(val1) && isObject(val2);
-    if (isObjects && !isEqual(val1, val2) || !isObjects && val1 !== val2) {
+    if (isObjects && !isEqual2(val1, val2) || !isObjects && val1 !== val2) {
       return false;
     }
   }
@@ -2788,6 +2788,110 @@ function isEqual(obj1, obj2) {
 function isObject(object) {
   return object != null && typeof object === "object";
 }
+
+// ../globalScripts/vec3.js
+var grid = 25;
+var Vec3 = class {
+  constructor(x, y, z3) {
+    this.pos = { x, y, z: z3 };
+    this.update();
+  }
+  multiplier(x) {
+    this.pos.x *= x, this.pos.y *= x, this.pos.z *= x;
+    this.update();
+  }
+  add(x, y, z3) {
+    this.pos.x += x;
+    this.pos.y += y;
+    this.pos.z += z3;
+    this.update();
+  }
+  sub(vec3) {
+    this.pos.x -= vec3.pos.x;
+    this.pos.z -= vec3.pos.y;
+    this.pos.z -= vec3.pos.z;
+    this.update();
+  }
+  update() {
+    this.z = this.pos.x + this.pos.y + this.pos.z;
+    this.screenPos = { x: (this.pos.x - this.pos.z) * 32 + width() / 2 - 32, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 * 32 + height() / 2 - (grid + grid) * 8 };
+  }
+  distance(vec) {
+    return ((vec.pos.x - this.pos.x) ** 2 + (vec.pos.z - this.pos.z) ** 2) ** 0.5;
+  }
+  vecDistance(vec) {
+    return new Vec3(this.pos.x - vec.pos.x, this.pos.y - vec.pos.y, this.pos.z - vec.pos.z);
+  }
+  print() {
+    console.log(this.pos);
+  }
+};
+var screenToGlobal = (vec2) => {
+  let mX = vec2.x - width() / 2;
+  let mY = vec2.y - height() / 2 + (grid + grid) * 8;
+  mY = (mX - mY * 2) / -2;
+  mX = mX + mY;
+  const y = Math.floor(Math.floor(mY) / 32);
+  const x = Math.floor(Math.floor(mX) / 32);
+  return new Vec3(x, 0, y);
+};
+
+// item.js
+var items = /* @__PURE__ */ new Map();
+var item = class {
+  constructor(image, globalLocation) {
+    let keys = [...items.keys()];
+    for (let i = 0; i < keys.length; i++) {
+      if (isEqual(keys[i], globalLocation.pos)) {
+        return;
+      }
+    }
+    this.image = image;
+    this.globalLocation = globalLocation;
+    this.sprite = add([
+      sprite(image),
+      pos(globalLocation.screenPos.x, globalLocation.screenPos.y),
+      z(globalLocation.z + 2),
+      scale(0.07)
+    ]);
+    items.set(globalLocation.pos, this);
+  }
+};
+var getItems = () => {
+  return items;
+};
+var createItem = (vec3) => {
+  new item(currentItem, vec3);
+};
+
+// entity.js
+var entites = /* @__PURE__ */ new Map();
+var entity = class {
+  constructor(image, globalLocation, entityType) {
+    let keys = [...entites.keys()];
+    for (let i = 0; i < keys.length; i++) {
+      if (isEqual(keys[i], globalLocation.pos)) {
+        return;
+      }
+    }
+    this.image = image;
+    this.globalLocation = globalLocation;
+    this.entityType = entityType;
+    this.sprite = add([
+      sprite(image),
+      pos(globalLocation.screenPos.x, globalLocation.screenPos.y),
+      z(globalLocation.z + 2),
+      scale(0.07)
+    ]);
+    entites.set(globalLocation.pos, this);
+  }
+};
+var getEntites = () => {
+  return entites;
+};
+var createEntity = (vec3, entityType) => {
+  new entity(currentEnity, vec3, entityType);
+};
 
 // blocks.js
 var blocks = /* @__PURE__ */ new Map();
@@ -2807,7 +2911,7 @@ var block = class {
   constructor(image, globalLocation, real) {
     let keys = [...blocks.keys()];
     for (let i = 0; i < keys.length; i++) {
-      if (isEqual(keys[i], globalLocation.pos)) {
+      if (isEqual2(keys[i], globalLocation.pos)) {
         return;
       }
     }
@@ -2826,7 +2930,7 @@ var destroyObject = (vec3) => {
   let keys = [...blocks.keys()];
   let block2 = void 0;
   for (let i = 0; i < keys.length; i++) {
-    if (isEqual(keys[i], vec3.pos)) {
+    if (isEqual2(keys[i], vec3.pos)) {
       block2 = { f: blocks.get(keys[i]), s: keys[i] };
       break;
     }
@@ -2856,7 +2960,7 @@ var isOccupied = (coords) => {
   let keys = [...blocks.keys()];
   for (let i = 0; i < keys.length; i++) {
     console.log(coords.pos);
-    if (isEqual(keys[i], coords.pos)) {
+    if (isEqual2(keys[i], coords.pos)) {
       returnVal = true;
       console.log(keys[i], coords);
       break;
@@ -2865,7 +2969,7 @@ var isOccupied = (coords) => {
   return returnVal;
 };
 var createObject = (vec3) => {
-  new block("block", vec3, toggleReal);
+  new block(currentBlock, vec3, toggleReal);
 };
 var saveLevel = (session2) => {
   const blocksValues = [...blocks.values()];
@@ -2880,7 +2984,16 @@ var saveLevel = (session2) => {
     return { pos: ob.globalLocation.pos, image: ob.image, real: ob.real };
   });
   const savedBlocks = rawBlockData.filter((x) => x.real);
-  console.log(rawBlockData, savedBlocks);
+  const items3 = [...getItems().values()];
+  const entites3 = [...getEntites().values()];
+  const rawItemData = items3.map((ob) => {
+    ob.sprite.opacity = 0;
+    return { pos: ob.globalLocation.pos, image: ob.image };
+  });
+  const rawEntityData = entites3.map((ob) => {
+    ob.sprite.opacity = 0;
+    return { pos: ob.globalLocation.pos, image: ob.image, entityType: ob.entityType };
+  });
   wait(0.1, () => {
     fetch("/save", {
       method: "POST",
@@ -2888,63 +3001,31 @@ var saveLevel = (session2) => {
         "Accept": "application/json",
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ session: session2, image: screenshot(), blocks: savedBlocks, rawBlockData }, getCircularReplacer())
-    }).then(blocksValues.forEach((e) => {
-      e.sprite.opacity = 1;
-    }));
+      body: JSON.stringify({ session: session2, image: screenshot(), blocks: savedBlocks, rawBlockData, rawItemData, rawEntityData }, getCircularReplacer())
+    }).then(() => {
+      blocksValues.map((e) => e.sprite.opacity = 1);
+      items3.map((e) => e.sprite.opacity = 1);
+      entites3.map((e) => e.sprite.opacity = 1);
+    });
   });
 };
 
 // loadAssets.js
 var loadAssets = () => {
-  loadSprite("block", "sprites/block.png");
   loadSprite("brush", "sprites/editor/brush.png");
   loadSprite("bucket", "sprites/editor/bucket.png");
   loadSprite("square", "sprites/editor/square.png");
   loadSprite("circle", "sprites/editor/circle.png");
   loadSprite("line", "sprites/editor/line.png");
   loadSprite("rubber", "sprites/editor/rubber.png");
-};
-
-// ../globalScripts/vec3.js
-var grid = 25;
-var Vec3 = class {
-  constructor(x, y, z3) {
-    this.pos = { x, y, z: z3 };
-    this.update();
-  }
-  multiplier(x) {
-    this.pos.x *= x, this.pos.y *= x, this.pos.z *= x;
-    this.update();
-  }
-  add(x, y, z3) {
-    this.pos.x += x;
-    this.pos.y += y;
-    this.pos.z += z3;
-    this.update();
-  }
-  sub(vec3) {
-    this.pos.x -= vec3.pos.x;
-    this.pos.z -= vec3.pos.y;
-    this.pos.z -= vec3.pos.z;
-    this.update();
-  }
-  update() {
-    this.z = this.pos.x + this.pos.y + this.pos.z;
-    this.screenPos = { x: (this.pos.x - this.pos.z) * 32 + width() / 2 - 32, y: (this.pos.x + this.pos.z - this.pos.y * 2) * 0.5 * 32 + height() / 2 - (grid + grid) * 8 };
-  }
-  print() {
-    console.log(this.pos);
-  }
-};
-var screenToGlobal = (vec2) => {
-  let mX = vec2.x - width() / 2;
-  let mY = vec2.y - height() / 2 + (grid + grid) * 8;
-  mY = (mX - mY * 2) / -2;
-  mX = mX + mY;
-  const y = Math.floor(Math.floor(mY) / 32);
-  const x = Math.floor(Math.floor(mX) / 32);
-  return new Vec3(x, 0, y);
+  loadSprite("axe", "sprites/items/axe.png");
+  loadSprite("pick", "sprites/items/pick.png");
+  loadSprite("bow", "sprites/items/bow.png");
+  loadSprite("player", "sprites/player.png");
+  loadSprite("enemy", "sprites/enemy.png");
+  loadSprite("end", "sprites/end.png");
+  loadSprite("grass", "sprites/grass.png");
+  loadSprite("snow", "sprites/snow.png");
 };
 
 // ../globalScripts/gui.js
@@ -3003,10 +3084,13 @@ var gui = class {
     this.layers.get(layer).hidden = bool;
     this.layers.get(layer).objs.forEach((x) => x.hidden = bool);
   }
-  toggleGui() {
-    this.gui.hidden = !this.gui.hidden;
+  hideGui(bool) {
+    this.gui.hidden = bool;
     [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden);
     [...this.layers.values()].forEach((e) => e.hidden = this.gui.hidden);
+  }
+  toggleGui() {
+    this.hideGui(!this.gui.hidden);
   }
   addObjFull(obj, functionCall, parentLayer = "gui") {
     const layer = this.layers.get(parentLayer);
@@ -3023,7 +3107,10 @@ var gui = class {
     );
     layer.objs.push(obj);
   }
-  addObj(displayed, relativePos, scale, functionCall, parentLayer = "gui") {
+  editObj(index, item2) {
+    [...this.objs.keys()][index] = item2;
+  }
+  addObj(displayed, relativePos, scale2, functionCall, parentLayer = "gui") {
     const layer = this.layers.get(parentLayer);
     console.log(layer);
     const obj = add([
@@ -3034,10 +3121,10 @@ var gui = class {
       area()
     ]);
     console.log(obj.pos);
-    obj.scale = scale;
+    obj.scale = scale2;
     wait(0.01, () => {
-      obj.width *= scale;
-      obj.height *= scale;
+      obj.width *= scale2;
+      obj.height *= scale2;
       this.addObjFull(obj, functionCall, parentLayer);
     });
   }
@@ -3144,9 +3231,33 @@ if (!level.new) {
     createObject(new Vec3(x.coords.x, x.coords.y, x.coords.z));
   });
 }
+var currentBlock = "grass";
+var currentItem = null;
+var currentEnity = null;
 var tools = new gui(
   [width() - 40, 120],
   [20, 20],
+  0.5,
+  99,
+  true
+);
+var blocks2 = new gui(
+  [width() - 40, 120],
+  [20, 140],
+  0.5,
+  99,
+  true
+);
+var items2 = new gui(
+  [width() - 40, 120],
+  [20, 260],
+  0.5,
+  99,
+  true
+);
+var entites2 = new gui(
+  [width() - 40, 120],
+  [20, 380],
   0.5,
   99,
   true
@@ -3178,9 +3289,33 @@ var changeTool = (tool) => {
   currentTool = tool;
 };
 var toolSet = ["brush", "bucket", "square", "circle", "rubber", "line"];
+var blockSet = ["grass", "snow"];
+var itemsSet = ["bow", "axe", "pick"];
+var entitySet = ["enemy", "player", "end"];
 var currentTool = toolSet[0];
 toolSet.forEach((e, i) => {
   tools.addObj(sprite(e), [100 / toolSet.length * 0.5 * (2 * i) + 8, 50], 0.2, () => changeTool(e));
+});
+blockSet.forEach((e, i) => {
+  blocks2.addObj(sprite(e), [100 / blockSet.length * 0.5 * (2 * i) + 8, 50], 1, () => {
+    currentEnity = null;
+    currentItem = null;
+    currentBlock = e;
+  });
+});
+itemsSet.forEach((e, i) => {
+  items2.addObj(sprite(e), [100 / itemsSet.length * 0.5 * (2 * i) + 8, 50], 0.2, () => {
+    currentEnity = null;
+    currentItem = e;
+    currentBlock = null;
+  });
+});
+entitySet.forEach((e, i) => {
+  entites2.addObj(sprite(e), [100 / entitySet.length * 0.5 * (2 * i) + 8, 50], 0.2, () => {
+    currentEnity = e;
+    currentItem = null;
+    currentBlock = null;
+  });
 });
 var yLevel = 0;
 var lastMouseCoords = new Vec3(0, 0, 0);
@@ -3195,30 +3330,49 @@ onMouseDown(() => {
   if (tools.clicked(mousePos())) {
     return;
   }
+  if (blocks2.clicked(mousePos())) {
+    return;
+  }
+  if (items2.clicked(mousePos())) {
+    return;
+  }
+  if (entites2.clicked(mousePos())) {
+    return;
+  }
   const coords = screenToGlobal(mousePos());
   coords.add(0, yLevel, 0);
-  if (isEqual(lastMouseCoords, coords)) {
+  if (isEqual2(lastMouseCoords, coords)) {
     return;
   }
   lastMouseCoords = coords;
   console.log("a");
-  switch (currentTool) {
-    case "brush":
-      createObject(coords);
-      break;
-    case "bucket":
-      floodFill({ ...coords });
-      break;
-    case "square":
-      break;
-    case "circle":
-      createCircle(5, coords.pos);
-      break;
-    case "rubber":
-      destroyObject(coords);
-      break;
-    case "line":
-      break;
+  if (currentBlock != null) {
+    switch (currentTool) {
+      case "brush":
+        createObject(coords);
+        break;
+      case "bucket":
+        floodFill({ ...coords });
+        break;
+      case "square":
+        break;
+      case "circle":
+        createCircle(5, coords.pos);
+        break;
+      case "rubber":
+        destroyObject(coords);
+        break;
+      case "line":
+        break;
+    }
+    return;
+  }
+  if (currentItem != null) {
+    createItem(coords);
+    return;
+  }
+  if (currentEnity != null) {
+    createEntity(coords, currentEnity);
   }
 });
 onKeyPress("s", () => {
@@ -3235,12 +3389,24 @@ onKeyPress("-", () => {
   yLevel--;
   updateBlockOpacity(yLevel, 1);
 });
-onKeyPress("b", () => {
+onKeyPress("t", () => {
   tools.toggleGui();
+});
+onKeyPress("b", () => {
+  blocks2.toggleGui();
+});
+onKeyPress("e", () => {
+  entites2.toggleGui();
+});
+onKeyPress("i", () => {
+  items2.toggleGui();
 });
 onKeyPress("g", () => {
   toggleReal = !toggleReal;
 });
 export {
+  currentBlock,
+  currentEnity,
+  currentItem,
   toggleReal
 };

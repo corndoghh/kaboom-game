@@ -45,14 +45,27 @@ app.get("/getLevels", (_req, res) => {
     })
 })
 
+const save = (session, name, data) => {
+    fs.writeFile(`src/levels/${session}/${name}.json`, data, 'utf8', function (err) {
+        if (err) {
+            console.log("An error occured while writing JSON Object to File.");
+            return console.log(err);
+        }
+     
+        console.log("JSON file has been saved.");
+    });
+
+
+}
+
 app.post("/save", (req, res) => {
     //console.log(req.body[0])
     const blocks = JSON.stringify(req.body.blocks);
     const urlData = JSON.stringify(req.body.image);
     const session = JSON.stringify(req.body.session).split('"')[1];
     const rawBlockData = JSON.stringify(req.body.rawBlockData.filter((x) => x != null).concat(req.body.blocks))
-
-    console.log(rawBlockData)
+    const rawItemData = JSON.stringify(req.body.rawItemData.filter((x) => x != null))
+    const rawEntityData = JSON.stringify(req.body.rawEntityData.filter((x) => x != null))
 
 
 
@@ -71,29 +84,12 @@ app.post("/save", (req, res) => {
 
     fs.writeFileSync(`src/levels/${session}/image.` + ext, buffer);
 
+    save(session, "blocks", blocks)
+    save(session, "rawBlockData", rawBlockData)
+    save(session, "items", rawItemData)
+    save(session, "entites", rawEntityData)
 
 
-    fs.writeFile(`src/levels/${session}/blocks.json`, blocks, 'utf8', function (err) {
-        if (err) {
-            console.log("An error occured while writing JSON Object to File.");
-            return console.log(err);
-        }
-     
-        console.log("JSON file has been saved.");
-    });
-
-
-    fs.writeFile(`src/levels/${session}/rawBlockData.json`, rawBlockData, 'utf8', function (err) {
-        if (err) {
-            console.log("An error occured while writing JSON Object to File.");
-            return console.log(err);
-        }
-     
-        console.log("JSON file has been saved.");
-    });
-    res.send({
-        body: req.body
-    });
 
 })
 

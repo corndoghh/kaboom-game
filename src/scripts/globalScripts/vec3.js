@@ -8,7 +8,7 @@ export class Vec3 {
         this.update()
     }
 
-    multiplier(x) {this.pos.x *= x, this.pos.y *= x, this.pos.z *= x; this.update() }
+    multiplier(x) { this.pos.x *= x, this.pos.y *= x, this.pos.z *= x; this.update() }
 
     add(x,y,z) { this.pos.x += x; this.pos.y += y; this.pos.z += z; this.update() }
 
@@ -18,6 +18,10 @@ export class Vec3 {
         this.z = this.pos.x+this.pos.y+this.pos.z
         this.screenPos = {x: ((this.pos.x - this.pos.z) * 32) + (width()/2) - 32 , y: (((this.pos.x + this.pos.z - this.pos.y*2) * 0.5) * 32) + (height()/2) - ((grid + grid) * 8)}
     }
+
+    distance(vec) { return ((vec.pos.x - this.pos.x)**2 + (vec.pos.z - this.pos.z)**2)**0.5 }
+
+    vecDistance(vec) { return new Vec3(this.pos.x - vec.pos.x, this.pos.y - vec.pos.y, this.pos.z - vec.pos.z)  }
 
     print() {
         console.log(this.pos)
