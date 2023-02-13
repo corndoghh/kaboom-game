@@ -3,13 +3,19 @@ import { screenToGlobal } from "../globalScripts/vec3";
 import { Vec3 } from "../globalScripts/vec3";
 import { isEqual } from "../globalScripts/functions";
 import { Inventory } from "./inventory";
-import { camera, level_one } from "./game";
+import { camera, levelManager } from "./game";
 
 
 const handler = (event) => {
     if (!event.returnValue) return
-    if (event.detail.toggle) level_one.player.inventory.toggle()
-    if (!level_one.player.inventory.gui.hidden) { camPos(width()/2, height()/2) } else { camPos(vec2(camera.start.screenPos.x, camera.start.screenPos.y)) }
+    if (event.detail.toggle) levelManager.getPlayer().inventory.toggle()
+    if (!levelManager.getPlayer().inventory.gui.hidden) { 
+        camera.stopCameraLoop()
+        camPos(width()/2, height()/2) 
+    } else {
+        camera.startCameraLoop()
+        camPos(vec2(camera.start.screenPos.x, camera.start.screenPos.y))
+    }
     
 
 }
@@ -25,6 +31,9 @@ export class Player extends Entity  {
         this.inventory = new Inventory();
 
         this.equipped = null
+
+        this.health = 3
+
 
 
         //this.startMovement()

@@ -2703,6 +2703,7 @@ var gui = class {
     this.layers.set("gui", this.gui);
     this.gui.objs = [];
     onClick(() => {
+      console.log("b");
       if (!this.clicked(mousePos())) {
         return;
       }
@@ -2762,7 +2763,7 @@ var gui = class {
   editObj(index, item) {
     [...this.objs.keys()][index] = item;
   }
-  addObj(displayed, relativePos, scale, functionCall, parentLayer = "gui") {
+  addObj(displayed, relativePos, scale, functionCall, parentLayer = "gui", colorV = color(255, 255, 255)) {
     const layer = this.layers.get(parentLayer);
     console.log(layer);
     const obj = add([
@@ -2770,7 +2771,8 @@ var gui = class {
       pos(relativePos[0], relativePos[1]),
       origin("center"),
       z(layer.z + 1),
-      area()
+      area(),
+      colorV
     ]);
     console.log(obj.pos);
     obj.scale = scale;

@@ -1,48 +1,85 @@
-import { isEqual } from "../globalScripts/functions";
+import { boxInput, isEqual } from "../globalScripts/functions";
+import { gui } from "../globalScripts/gui";
 import { screenToGlobal, Vec3 } from "../globalScripts/vec3"
-import { level_one } from "./game";
+import { Block } from "./block";
+import { Camera } from "./camera";
+import { camera, levelManager } from "./game";
 
 const preventCollision = (con, e) => { if (con) { e.preventDefault(); return true }; return false; } 
 
+const isEndCollide = (vec, e) => { return isEqual(e.level.end.vec3, vec) }
 const isPlayerCollide = (vec, e) => { return e.level.getEntityAt(vec).filter((x) => x.type == "player") } 
 const isEnemyCollide = (vec, e) => { return e.level.enemies }
-const isEndCollideSimple = (vec, e) => {
-    return e.level.entites.filter((x) => x.type == "enemy").filter((q) => vec.x >= q.sprite.pos.x && vec.x <= q.sprite.pos.x + q.sprite.width && vec.y >= q.sprite.pos.y && vec.y <= q.sprite.pos.y + q.sprite.height)
-}
+
 const isBlockCollide = (vec, e) => { return e.level.getObjectAt(vec) }
 const isItemCollide = (vec, e) => { if (e.level.getEntityAt(vec) != null) { return e.level.getEntityAt(vec).filter((x) => x.type == "item") } }
-const isEndCollide = (vec, e) => {}
 
 
 
 
-const moveEvent = (fullEvent) => {
-    if (level_one.player.inventory.isOpen()) { fullEvent.preventDefault(); return true }
+const moveEvent = async (fullEvent) => {
+    if (levelManager.getPlayer().inventory.isOpen()) { fullEvent.preventDefault(); return true }
     const e = fullEvent.detail
     const vec = new Vec3(Math.round(e.to.x+0.1), Math.round(e.to.y+0.1), Math.round(e.to.z+0.1))
+    //console.log(e.to.x)
     const realBlock = screenToGlobal(e.toReal)
     realBlock.add(1,0,0)
-    console.log(e.entity.type)
+    if (preventCollision(!isBlockCollide(vec, e), fullEvent)) { console.log("passed", vec); return true }
+    vec.add(0,1,0)
+    if (preventCollision(isBlockCollide(vec, e), fullEvent)) { return true }
+
     switch (e.entity.type) {
+        
         case "player": {
-            if (preventCollision(!isBlockCollide(vec, e), fullEvent)) { console.log("passed", vec); return true }
-            vec.add(0,1,0)
-            if (preventCollision(isBlockCollide(vec, e), fullEvent)) { return true }
 
             const item = isItemCollide(realBlock, e)[0]
             if (item) {
                 //item.destroyItem()
-                level_one.player.inventory.addItem(item)
+                levelManager.getPlayer().inventory.addItem(item)
+            }
+
+            if (isEndCollide(realBlock, e)) {
+
+                levelManager.getCurrentLevel().disable()
+
+                const question = [Math.floor(Math.random() * 20), ["+", "-", "*"][Math.floor(Math.random() * 2)], Math.floor(Math.random() * 20)]
+
+                const answer = question[1] == "+" ? question[0] + question[2] : question[1] == "-" ? question[0] - question[2] : question[0] * question[1]
+
+                //const data = await new Promise( async (resolve, _reject) => {
+                const data = await boxInput(text("Answer", {font: "sink"}), text("What is " + question[0] + " " + question[1] + " " + question[2] + "?"), [0,0,0,0.9], true)            
+
+                if (parseInt(data) == answer) {
+                    levelManager.changeLevel(levelManager.currentLevel.end.levelTo)
+                    return 
+                }
+
+                levelManager.changeLevel(levelManager.levelName)
+
+
+
             }
             // const entity = e.level.getEntityAt(realBlock)[0]
             // if (entity != null && entity.type == "item") { entity.destroy() }
             break;
         }
         case "enemy": {
-            console.log("hicue")
-            shake()
-            play("rock", {volume: 0.2})
             
+            //e.preventDefault()
+
+
+            if (levelManager.getPlayer().vec3.distance(realBlock) < 2 && ((e.entity.lastCoolDown + e.entity.coolDown) - time()) <= 0) {
+                console.log(time() - (e.entity.lastCoolDown + e.entity.coolDown))
+                e.entity.lastCoolDown = time()
+                shake()
+                play("rock", {volume: 0.2})
+                levelManager.getPlayer().health -= 1
+                if (!levelManager.getPlayer().health ) {
+                    const loading = new gui([width(), height()], [0,0], 1, 100, false, color(50,50,50))    
+                }
+            }
+
+            //console.log(levelManager.getPlayer().health) 
 
 
         }
@@ -64,17 +101,19 @@ const clickEvent = (event) => {
             vec.add(1,1,1)
             const block = isBlockCollide(vec, e)
             if (block && e.to.distance(e.from) <= 6) {
-                level_one.getBlockAt(block.pos)[0].destroy()
+                levelManager.getCurrentLevel().getBlockAt(block.pos)[0].destroy()
                 console.log("nice")
 
             } 
             break
         }
         case "axe": {
+            new Block(screenToGlobal(e.mouseVec), "snow")
+            console.log(e.mouseVec)
             const enemy = isEndCollideSimple(e.mouseVec, e)
             console.log(enemy)
             if (enemy[0]) {
-                enemy[0].destroy()
+                enemy[0].destroyEnemy()
             }
             break;
         }

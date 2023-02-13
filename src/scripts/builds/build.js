@@ -2708,6 +2708,70 @@ var levelLoader = async (level) => {
 };
 
 // ../globalScripts/functions.js
+var boxInput = async (boxText, title, colour = [0, 0, 0, 0.5], isPlaceholder = false, coords = [width() / 2, height() / 2], rectSize = [400, 150]) => {
+  if (boxText.textSize == void 0) {
+    boxText.textSize = rectSize[0] / 10;
+  }
+  if (title.textSize == void 0) {
+    title.textSize = rectSize[0] / 20;
+  }
+  if (boxText.font == void 0) {
+    boxText.font = "sink";
+  }
+  if (title.font == void 0) {
+    title.font = "sink";
+  }
+  const box = add([
+    rect(rectSize[0], rectSize[1]),
+    color(colour[0], colour[1], colour[2]),
+    opacity(colour[3]),
+    outline(5, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
+    origin("center"),
+    pos(coords[0], coords[1]),
+    z(100)
+  ]);
+  const titleText = add([
+    title,
+    origin("center"),
+    pos(coords[0], coords[1] - box.height / 2 + title.textSize),
+    z(102)
+  ]);
+  const outlineBox = add([
+    rect(rectSize[0] - 40, boxText.textSize + 20),
+    pos(coords[0], coords[1] + title.textSize / 2),
+    origin("center"),
+    opacity(0),
+    outline(1, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
+    z(103)
+  ]);
+  const textField = add([
+    boxText,
+    origin("center"),
+    pos(coords[0], coords[1] + title.textSize / 2),
+    opacity(isPlaceholder ? 0.5 : 1),
+    z(101)
+  ]);
+  const result = await new Promise((r, _j) => {
+    let returnText = "";
+    let placeholder = isPlaceholder ? "" : textField.text;
+    onKeyPress("backspace", () => {
+      returnText = returnText.substring(0, returnText.length - 1);
+      textField.text = placeholder + returnText;
+    });
+    onCharInput((char) => {
+      onKeyPress("enter", () => {
+        r(returnText);
+      });
+      returnText += char;
+      textField.text = placeholder + returnText;
+    });
+  });
+  box.destroy();
+  titleText.destroy();
+  outlineBox.destroy();
+  textField.destroy();
+  return result;
+};
 function isEqual(obj1, obj2) {
   var props1 = Object.getOwnPropertyNames(obj1);
   var props2 = Object.getOwnPropertyNames(obj2);
@@ -2786,9 +2850,8 @@ var Block = class {
     ]);
   }
   destroy() {
-    level_one.blocks = level_one.blocks.filter((x) => !isEqual(x.pos, this.vec3.pos));
-    level_one.rawBlocks = level_one.rawBlocks.filter((x) => !isEqual(x.pos, this.vec3.pos));
-    level_one.realBlocks = level_one.realBlocks.filter((x) => x != this);
+    levelManager.getCurrentLevel().blocks = levelManager.getCurrentLevel().blocks.filter((x) => !isEqual(x.vec3.pos, this.vec3.pos));
+    levelManager.getCurrentLevel().rawBlocks = levelManager.getCurrentLevel().rawBlocks.filter((x) => !isEqual(x.pos, this.vec3.pos));
     this.destroySoft();
   }
   destroySoft() {
@@ -2825,7 +2888,13 @@ var Entity = class {
     this.sprite.z = vec.z + 1;
   }
   destroy() {
-    level_one.entites = level_one.entites.filter((x) => x != this);
+    let item = levelManager.getCurrentLevel().entites.filter((x) => x == this);
+    if (levelManager.getCurrentLevel().enemies.includes(item)) {
+      levelManager.getCurrentLevel().enemies.splice(levelManager.getCurrentLevel().enemies.indexOf(item), 1);
+    }
+    if (levelManager.getCurrentLevel().items.includes(item)) {
+      levelManager.getCurrentLevel().items.splice(levelManager.getCurrentLevel().items.indexOf(item), 1);
+    }
     this.sprite.destroy();
   }
   walk(vec) {
@@ -2841,20 +2910,24 @@ var Entity = class {
       if (vecy3.distance(anotherTempVec) < 0.5) {
         this.walkCancel();
         this.moveTo(vec);
-        const movement = new CustomEvent("playerMovement", {
-          bubbles: true,
-          cancelable: true,
-          detail: {
-            entity: this,
-            level: level_one,
-            to: vec,
-            toReal: vec2(vecy3.screenPos.x, vecy3.screenPos.y)
-          }
-        });
-        if (!document.dispatchEvent(movement))
-          return;
       }
-      console.log(vecy3.distance(anotherTempVec));
+      const movement = new CustomEvent("playerMovement", {
+        bubbles: true,
+        cancelable: true,
+        detail: {
+          entity: this,
+          level: levelManager.getCurrentLevel(),
+          to: vecy3.pos,
+          toReal: vec2(vecy3.screenPos.x, vecy3.screenPos.y)
+        }
+      });
+      const test = !document.dispatchEvent(movement);
+      console.log(test);
+      if (test) {
+        this.moveTo(new Vec3(tempVec.pos.x - 1, tempVec.pos.y, tempVec.pos.z));
+        return;
+      }
+      ;
       lastDis = vecy3.distance(anotherTempVec);
       vecy3.add(ave.pos.x * dt() * Math.random() * 0.8, ave.pos.y * dt() * Math.random() * 2, ave.pos.z * dt() * Math.random() * 0.8);
       this.moveTo(vecy3);
@@ -2862,177 +2935,12 @@ var Entity = class {
   }
 };
 
-// ../globalScripts/gui.js
-var inRegion = (target, vec22, optional) => {
-  if (optional === void 0) {
-    optional = true;
-  }
-  return vec22.x >= target.pos.x && vec22.x <= target.pos.x + target.width && vec22.y >= target.pos.y && vec22.y <= target.pos.y + target.height && optional;
-};
-var gui = class {
-  constructor(rect2, pos2, opacity2, z1, hidden, colour) {
-    this.gui = add([
-      pos(pos2[0], pos2[1]),
-      rect(rect2[0], rect2[1]),
-      outline(1),
-      z(z1),
-      colour,
-      opacity(opacity2)
-    ]);
-    this.gui.hidden = hidden;
-    this.layers = /* @__PURE__ */ new Map();
-    this.objs = /* @__PURE__ */ new Map();
-    this.layers.set("gui", this.gui);
-    this.gui.objs = [];
-    onClick(() => {
-      if (!this.clicked(mousePos())) {
-        return;
-      }
-      [...this.objs.keys()].filter((x) => !x.hidden).forEach((e) => {
-        const e2 = { pos: { x: e.pos.x - e.width / 2, y: e.pos.y - e.height / 2 }, width: e.width, height: e.height };
-        if (inRegion(e2, mousePos())) {
-          this.objs.get(e).call();
-        }
-      });
-    });
-  }
-  clicked(vec22) {
-    return inRegion(this.gui, vec22, !this.gui.hidden);
-  }
-  addLayer(name, rectSize, coords, colour, outline2, zLayer) {
-    const layer = add([
-      pos(this.gui.width * coords[0] / 100 + this.gui.pos.x, this.gui.height * coords[1] / 100 + this.gui.pos.y),
-      rect(this.gui.width * rectSize[0] / 100, this.gui.height * rectSize[1] / 100),
-      colour,
-      outline2,
-      z(zLayer),
-      origin("center")
-    ]);
-    layer.objs = [];
-    this.layers.set(name, layer);
-  }
-  isLayerHidden(layer) {
-    return this.layers.get(layer).hidden;
-  }
-  hideLayer(layer, bool) {
-    this.layers.get(layer).hidden = bool;
-    this.layers.get(layer).objs.forEach((x) => x.hidden = bool);
-  }
-  hideGui(bool) {
-    this.gui.hidden = bool;
-    [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden);
-    [...this.layers.values()].forEach((e) => e.hidden = this.gui.hidden);
-  }
-  toggleGui() {
-    this.hideGui(!this.gui.hidden);
-  }
-  addObjFull(obj, functionCall, parentLayer = "gui") {
-    const layer = this.layers.get(parentLayer);
-    const percentage = [obj.pos.x, obj.pos.y];
-    obj.pos.x = layer.width * obj.pos.x / 100 + layer.pos.x;
-    obj.pos.y = layer.height * obj.pos.y / 100 + layer.pos.y;
-    obj.hidden = layer.hidden;
-    if (percentage[1] > 100) {
-      console.log("out");
-    }
-    this.objs.set(
-      obj,
-      functionCall
-    );
-    layer.objs.push(obj);
-  }
-  editObj(index, item) {
-    [...this.objs.keys()][index] = item;
-  }
-  addObj(displayed, relativePos, scale2, functionCall, parentLayer = "gui") {
-    const layer = this.layers.get(parentLayer);
-    console.log(layer);
-    const obj = add([
-      displayed,
-      pos(relativePos[0], relativePos[1]),
-      origin("center"),
-      z(layer.z + 1),
-      area()
-    ]);
-    console.log(obj.pos);
-    obj.scale = scale2;
-    wait(0.01, () => {
-      obj.width *= scale2;
-      obj.height *= scale2;
-      this.addObjFull(obj, functionCall, parentLayer);
-    });
-  }
-  remove() {
-    this.gui.destroy();
-    [...this.objs.keys()].forEach((x) => x.destroy());
-    [...this.layers.values()].forEach((x) => x.destroy());
-  }
-};
-
-// inventory.js
-var Inventory = class extends gui {
-  constructor() {
-    super([width() * 0.8, height() * 0.8], [width() / 10, height() / 10], 0.8, 1e3, true, color(105, 105, 105));
-    this.items = /* @__PURE__ */ new Map();
-  }
-  open() {
-    this.hideGui(false);
-  }
-  close() {
-    this.hideGui(true);
-  }
-  toggle() {
-    this.toggleGui();
-  }
-  isOpen() {
-    return !this.gui.hidden;
-  }
-  addItem(item) {
-    const image = item.image;
-    item.destroyItem();
-    const size = this.getItems().size;
-    this.addObj(sprite(image), [20 * (this.getItems().size % 5) + 10, 20 * Math.floor(this.getItems().size / 5) + 10], 0.2, () => {
-      level_one.player.equipt(size);
-    });
-    this.items.set(size, image);
-  }
-  getItems() {
-    return this.items;
-  }
-};
-
-// player.js
-var handler = (event) => {
-  if (!event.returnValue)
-    return;
-  if (event.detail.toggle)
-    level_one.player.inventory.toggle();
-  if (!level_one.player.inventory.gui.hidden) {
-    camPos(width() / 2, height() / 2);
-  } else {
-    camPos(vec2(camera.start.screenPos.x, camera.start.screenPos.y));
-  }
-};
-var Player = class extends Entity {
-  constructor(image) {
-    super(image, origin("bot"), new Vec3(10, 0, 10), "player", vec2(32, 20));
-    this.speed = 3;
-    this.inventory = new Inventory();
-    this.equipped = null;
-    this.startInventoryLoop();
-  }
-  startInventoryLoop() {
-    document.addEventListener("inventoryEvent", handler);
-  }
-  stopInventoryLoop() {
-    document.removeEventListener("inventoryEvent", handler);
-  }
-  equipt(index) {
-    console.log(index);
-    this.equipped = this.inventory.getItems().get(index);
-  }
-  getPos() {
-    return this.vec3;
+// end.js
+var End = class extends Entity {
+  constructor(image, pos2, levelTo) {
+    super(image, origin("top"), pos2, "end", [30, -15]);
+    this.levelTo = levelTo;
+    this.getSprite().scale = 0.07;
   }
 };
 
@@ -3041,6 +2949,8 @@ var Enemy = class extends Entity {
   constructor(image, vec3) {
     super(image, origin("top"), vec3, "enemy", [30, -15]);
     this.getSprite().scale = 0.07;
+    this.coolDown = 5;
+    this.lastCoolDown = time();
     this.startMovementLoop();
   }
   startMovementLoop() {
@@ -3048,16 +2958,19 @@ var Enemy = class extends Entity {
       this.movementLoop();
     }
     this.movementLoop = onUpdate(() => {
-      const distance = level_one.player.vec3.distance(this.vec3);
+      const distance = levelManager.getPlayer().vec3.distance(this.vec3);
       if (distance < 5 && distance > 0.1) {
         this.walkCancel();
-        const a2 = this.walk(level_one.player.vec3);
-        console.log(a2);
+        this.walk(levelManager.getPlayer().vec3);
       }
     });
   }
   stopMovementLoop() {
     this.movementLoop();
+  }
+  destroyEnemy() {
+    this.stopMovementLoop();
+    this.destroy();
   }
 };
 
@@ -3076,8 +2989,9 @@ var Item = class extends Entity {
 };
 
 // keybinds.js
+var openInventory = null;
 var startKeybinds = () => {
-  const openInventory = onKeyPress("e", () => {
+  openInventory = onKeyPress("e", () => {
     const inventory = new CustomEvent("inventoryEvent", {
       bubbles: true,
       cancelable: true,
@@ -3088,33 +3002,43 @@ var startKeybinds = () => {
     if (!document.dispatchEvent(inventory))
       return;
   });
+  onKeyPress("c", () => {
+    camera.stopCameraLoop();
+    camPos(width() / 2, height() / 2);
+  });
+};
+var stopKeybinds = () => {
+  openInventory();
 };
 
 // level.js
 var levels = /* @__PURE__ */ new Map();
 var Level = class {
-  constructor(name, levelData, player2) {
-    this.loadLevel(name, levelData, player2);
+  constructor(name, levelData, player) {
+    this.loadLevel(name, levelData, player);
     startKeybinds();
   }
-  loadLevel(name, levelData, player2) {
-    this.player = player2;
+  loadLevel(name, levelData, player) {
+    this.player = player;
     this.items = levelData.items;
     this.entites = [];
     this.name = name;
-    this.blocks = levelData.blocks;
     this.lastClickedBlock = null;
     this.currentObjectClicked = null;
     this.rawBlocks = levelData.rawBlocks;
-    this.realBlocks = [];
+    this.blocks = [];
+    console.log(this.player);
+    camera.startCameraLoop();
     this.enemies = levelData.entites.filter((x) => x.entityType == "enemy");
-    this.entites.push(player2);
+    this.end = levelData.entites.filter((x) => x.entityType == "end")[0];
+    this.end = new End("end", new Vec3(this.end.pos.x, this.end.pos.y, this.end.pos.z), "level2");
+    this.entites.push(player);
     const tempPlayerPos = levelData.entites.filter((x) => x.entityType == "player")[0].pos;
     this.player.moveTo(new Vec3(tempPlayerPos.x, tempPlayerPos.y, tempPlayerPos.z));
-    if (this.blocks != null) {
-      this.blocks.forEach((x) => {
+    if (this.rawBlocks != null) {
+      this.rawBlocks.forEach((x) => {
         const a2 = new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image);
-        this.realBlocks.push(a2);
+        this.blocks.push(a2);
       });
     }
     if (this.enemies != null) {
@@ -3231,10 +3155,278 @@ var Level = class {
     return this.getXat(vec3, this.rawBlocks);
   }
   getBlockAt(vec3) {
-    return this.realBlocks.filter((x) => isEqual(x.vec3.pos, vec3));
+    return this.blocks.filter((x) => isEqual(x.vec3.pos, vec3));
   }
   getEntityAt(vec3) {
     return this.entites.filter((x) => x.vec3 == this.getXat(vec3, this.entites.map((x2) => x2.vec3)));
+  }
+  destroyBlock(vec3) {
+    let block = null;
+    if (vec3.type == "Vec3") {
+      block = this.getBlockAt(vec3);
+    } else {
+      block = vec3;
+    }
+    ;
+    if (block) {
+      block.destroy();
+      this.blocks.splice(this.blocks.indexOf(block), 1);
+    }
+  }
+  enable() {
+    this.startPlayerMovement();
+    this.startClickLoop();
+    camera.startCameraLoop();
+    startKeybinds();
+  }
+  disable() {
+    this.stopPlayerMovement();
+    this.stopClickLoop();
+    camera.stopCameraLoop();
+    stopKeybinds();
+  }
+  destroy() {
+    this.blocks.forEach((x) => {
+      x.destroy();
+    });
+    let getIndex = null;
+    this.entites.forEach((x) => {
+      if (x.type == "enemy")
+        x.destroyEnemy();
+    });
+    this.end.destroy();
+    this.disable();
+  }
+};
+
+// ../globalScripts/gui.js
+var inRegion = (target, vec22, optional) => {
+  if (optional === void 0) {
+    optional = true;
+  }
+  return vec22.x >= target.pos.x && vec22.x <= target.pos.x + target.width && vec22.y >= target.pos.y && vec22.y <= target.pos.y + target.height && optional;
+};
+var gui = class {
+  constructor(rect2, pos2, opacity2, z1, hidden, colour) {
+    this.gui = add([
+      pos(pos2[0], pos2[1]),
+      rect(rect2[0], rect2[1]),
+      outline(1),
+      z(z1),
+      colour,
+      opacity(opacity2)
+    ]);
+    this.gui.hidden = hidden;
+    this.layers = /* @__PURE__ */ new Map();
+    this.objs = /* @__PURE__ */ new Map();
+    this.layers.set("gui", this.gui);
+    this.gui.objs = [];
+    onClick(() => {
+      console.log("b");
+      if (!this.clicked(mousePos())) {
+        return;
+      }
+      [...this.objs.keys()].filter((x) => !x.hidden).forEach((e) => {
+        const e2 = { pos: { x: e.pos.x - e.width / 2, y: e.pos.y - e.height / 2 }, width: e.width, height: e.height };
+        if (inRegion(e2, mousePos())) {
+          this.objs.get(e).call();
+        }
+      });
+    });
+  }
+  clicked(vec22) {
+    return inRegion(this.gui, vec22, !this.gui.hidden);
+  }
+  addLayer(name, rectSize, coords, colour, outline2, zLayer) {
+    const layer = add([
+      pos(this.gui.width * coords[0] / 100 + this.gui.pos.x, this.gui.height * coords[1] / 100 + this.gui.pos.y),
+      rect(this.gui.width * rectSize[0] / 100, this.gui.height * rectSize[1] / 100),
+      colour,
+      outline2,
+      z(zLayer),
+      origin("center")
+    ]);
+    layer.objs = [];
+    this.layers.set(name, layer);
+  }
+  isLayerHidden(layer) {
+    return this.layers.get(layer).hidden;
+  }
+  hideLayer(layer, bool) {
+    this.layers.get(layer).hidden = bool;
+    this.layers.get(layer).objs.forEach((x) => x.hidden = bool);
+  }
+  hideGui(bool) {
+    this.gui.hidden = bool;
+    [...this.objs.keys()].forEach((e) => e.hidden = this.gui.hidden);
+    [...this.layers.values()].forEach((e) => e.hidden = this.gui.hidden);
+  }
+  toggleGui() {
+    this.hideGui(!this.gui.hidden);
+  }
+  addObjFull(obj, functionCall, parentLayer = "gui") {
+    const layer = this.layers.get(parentLayer);
+    const percentage = [obj.pos.x, obj.pos.y];
+    obj.pos.x = layer.width * obj.pos.x / 100 + layer.pos.x;
+    obj.pos.y = layer.height * obj.pos.y / 100 + layer.pos.y;
+    obj.hidden = layer.hidden;
+    if (percentage[1] > 100) {
+      console.log("out");
+    }
+    this.objs.set(
+      obj,
+      functionCall
+    );
+    layer.objs.push(obj);
+  }
+  editObj(index, item) {
+    [...this.objs.keys()][index] = item;
+  }
+  addObj(displayed, relativePos, scale2, functionCall, parentLayer = "gui", colorV = color(255, 255, 255)) {
+    const layer = this.layers.get(parentLayer);
+    console.log(layer);
+    const obj = add([
+      displayed,
+      pos(relativePos[0], relativePos[1]),
+      origin("center"),
+      z(layer.z + 1),
+      area(),
+      colorV
+    ]);
+    console.log(obj.pos);
+    obj.scale = scale2;
+    wait(0.01, () => {
+      obj.width *= scale2;
+      obj.height *= scale2;
+      this.addObjFull(obj, functionCall, parentLayer);
+    });
+  }
+  remove() {
+    this.gui.destroy();
+    [...this.objs.keys()].forEach((x) => x.destroy());
+    [...this.layers.values()].forEach((x) => x.destroy());
+  }
+};
+
+// inventory.js
+var Inventory = class extends gui {
+  constructor() {
+    super([width() * 0.8, height() * 0.8], [width() / 10, height() / 10], 0.8, 1e3, true, color(105, 105, 105));
+    this.items = /* @__PURE__ */ new Map();
+  }
+  open() {
+    this.hideGui(false);
+  }
+  close() {
+    this.hideGui(true);
+  }
+  toggle() {
+    this.toggleGui();
+  }
+  isOpen() {
+    return !this.gui.hidden;
+  }
+  addItem(item) {
+    const image = item.image;
+    item.destroyItem();
+    const size = this.getItems().size;
+    this.addObj(sprite(image), [20 * (this.getItems().size % 5) + 10, 20 * Math.floor(this.getItems().size / 5) + 10], 0.2, () => {
+      levelManager.getPlayer().equipt(size);
+    });
+    this.items.set(size, image);
+  }
+  getItems() {
+    return this.items;
+  }
+};
+
+// player.js
+var handler = (event) => {
+  if (!event.returnValue)
+    return;
+  if (event.detail.toggle)
+    levelManager.getPlayer().inventory.toggle();
+  if (!levelManager.getPlayer().inventory.gui.hidden) {
+    camera.stopCameraLoop();
+    camPos(width() / 2, height() / 2);
+  } else {
+    camera.startCameraLoop();
+    camPos(vec2(camera.start.screenPos.x, camera.start.screenPos.y));
+  }
+};
+var Player = class extends Entity {
+  constructor(image) {
+    super(image, origin("bot"), new Vec3(10, 0, 10), "player", vec2(32, 20));
+    this.speed = 3;
+    this.inventory = new Inventory();
+    this.equipped = null;
+    this.health = 3;
+    this.startInventoryLoop();
+  }
+  startInventoryLoop() {
+    document.addEventListener("inventoryEvent", handler);
+  }
+  stopInventoryLoop() {
+    document.removeEventListener("inventoryEvent", handler);
+  }
+  equipt(index) {
+    console.log(index);
+    this.equipped = this.inventory.getItems().get(index);
+  }
+  getPos() {
+    return this.vec3;
+  }
+};
+
+// camera.js
+var enabled = false;
+var pine = (e) => {
+  if (!e.returnValue)
+    return;
+  const cam = camera;
+  const pos2 = new Vec3(e.detail.to.x, e.detail.to.y, e.detail.to.z);
+  const distance = pos2.distance(cam.start);
+  if (distance > 10) {
+    const ave = pos2.vecDistance(cam.start);
+    cam.transform.pos.x += ave.pos.x;
+    cam.transform.pos.z += ave.pos.z;
+    console.log(cam.transform);
+    const tempVec = Object.assign({}, cam.start);
+    const vecy3 = new Vec3(tempVec.pos.x, tempVec.pos.y, tempVec.pos.z);
+    cam.start = Object.assign({}, cam.object.getPos());
+    const cancel = onUpdate(() => {
+      if (!enabled) {
+        cancel();
+        wait(0.01, () => {
+          camPos(width() / 2, height() / 2);
+        });
+      }
+      vecy3.add(ave.pos.x * dt(), ave.pos.y * dt() * Math.random() * 2, ave.pos.z * dt());
+      camPos(vec2(vecy3.screenPos.x, vecy3.screenPos.y));
+    });
+    wait(1, () => {
+      cancel();
+    });
+    camPos(cam.object.sprite.pos);
+  }
+};
+var Camera = class {
+  constructor(object) {
+    this.transform = {
+      pos: { x: 0, z: 0 }
+    };
+    this.object = object;
+    this.start = Object.assign({}, object.getPos());
+    this.startNew = Object.assign({}, object.sprite.pos);
+    camPos(object.sprite.pos);
+  }
+  startCameraLoop() {
+    enabled = true;
+    document.addEventListener("playerMovement", pine);
+  }
+  stopCameraLoop() {
+    enabled = false;
+    document.removeEventListener("playerMovement", pine);
   }
 };
 
@@ -3247,8 +3439,8 @@ var preventCollision = (con, e) => {
   ;
   return false;
 };
-var isEndCollideSimple = (vec, e) => {
-  return e.level.entites.filter((x) => x.type == "enemy").filter((q) => vec.x >= q.sprite.pos.x && vec.x <= q.sprite.pos.x + q.sprite.width && vec.y >= q.sprite.pos.y && vec.y <= q.sprite.pos.y + q.sprite.height);
+var isEndCollide = (vec, e) => {
+  return isEqual(e.level.end.vec3, vec);
 };
 var isBlockCollide = (vec, e) => {
   return e.level.getObjectAt(vec);
@@ -3258,8 +3450,8 @@ var isItemCollide = (vec, e) => {
     return e.level.getEntityAt(vec).filter((x) => x.type == "item");
   }
 };
-var moveEvent = (fullEvent) => {
-  if (level_one.player.inventory.isOpen()) {
+var moveEvent = async (fullEvent) => {
+  if (levelManager.getPlayer().inventory.isOpen()) {
     fullEvent.preventDefault();
     return true;
   }
@@ -3267,27 +3459,44 @@ var moveEvent = (fullEvent) => {
   const vec = new Vec3(Math.round(e.to.x + 0.1), Math.round(e.to.y + 0.1), Math.round(e.to.z + 0.1));
   const realBlock = screenToGlobal(e.toReal);
   realBlock.add(1, 0, 0);
-  console.log(e.entity.type);
+  if (preventCollision(!isBlockCollide(vec, e), fullEvent)) {
+    console.log("passed", vec);
+    return true;
+  }
+  vec.add(0, 1, 0);
+  if (preventCollision(isBlockCollide(vec, e), fullEvent)) {
+    return true;
+  }
   switch (e.entity.type) {
     case "player": {
-      if (preventCollision(!isBlockCollide(vec, e), fullEvent)) {
-        console.log("passed", vec);
-        return true;
-      }
-      vec.add(0, 1, 0);
-      if (preventCollision(isBlockCollide(vec, e), fullEvent)) {
-        return true;
-      }
       const item = isItemCollide(realBlock, e)[0];
       if (item) {
-        level_one.player.inventory.addItem(item);
+        levelManager.getPlayer().inventory.addItem(item);
+      }
+      if (isEndCollide(realBlock, e)) {
+        levelManager.getCurrentLevel().disable();
+        const question = [Math.floor(Math.random() * 20), ["+", "-", "*"][Math.floor(Math.random() * 2)], Math.floor(Math.random() * 20)];
+        const answer = question[1] == "+" ? question[0] + question[2] : question[1] == "-" ? question[0] - question[2] : question[0] * question[1];
+        const data = await boxInput(text("Answer", { font: "sink" }), text("What is " + question[0] + " " + question[1] + " " + question[2] + "?"), [0, 0, 0, 0.9], true);
+        if (parseInt(data) == answer) {
+          levelManager.changeLevel(levelManager.currentLevel.end.levelTo);
+          return;
+        }
+        levelManager.changeLevel(levelManager.levelName);
       }
       break;
     }
     case "enemy": {
-      console.log("hicue");
-      shake();
-      play("rock", { volume: 0.2 });
+      if (levelManager.getPlayer().vec3.distance(realBlock) < 2 && e.entity.lastCoolDown + e.entity.coolDown - time() <= 0) {
+        console.log(time() - (e.entity.lastCoolDown + e.entity.coolDown));
+        e.entity.lastCoolDown = time();
+        shake();
+        play("rock", { volume: 0.2 });
+        levelManager.getPlayer().health -= 1;
+        if (!levelManager.getPlayer().health) {
+          const loading = new gui([width(), height()], [0, 0], 1, 100, false, color(50, 50, 50));
+        }
+      }
     }
   }
 };
@@ -3300,16 +3509,18 @@ var clickEvent = (event) => {
       vec.add(1, 1, 1);
       const block = isBlockCollide(vec, e);
       if (block && e.to.distance(e.from) <= 6) {
-        level_one.getBlockAt(block.pos)[0].destroy();
+        levelManager.getCurrentLevel().getBlockAt(block.pos)[0].destroy();
         console.log("nice");
       }
       break;
     }
     case "axe": {
+      new Block(screenToGlobal(e.mouseVec), "snow");
+      console.log(e.mouseVec);
       const enemy = isEndCollideSimple(e.mouseVec, e);
       console.log(enemy);
       if (enemy[0]) {
-        enemy[0].destroy();
+        enemy[0].destroyEnemy();
       }
       break;
     }
@@ -3329,42 +3540,43 @@ var loadEvents = () => {
   document.addEventListener("customClick", clickEvent);
 };
 
-// camera.js
-var pine = (e) => {
-  if (!e.returnValue)
-    return;
-  const cam = camera;
-  const pos2 = new Vec3(e.detail.to.x, e.detail.to.y, e.detail.to.z);
-  const distance = pos2.distance(cam.start);
-  if (distance > 10) {
-    const ave = pos2.vecDistance(cam.start);
-    const tempVec = Object.assign({}, cam.start);
-    const vecy3 = new Vec3(tempVec.pos.x, tempVec.pos.y, tempVec.pos.z);
-    cam.start = Object.assign({}, cam.object.getPos());
-    const cancel = onUpdate(() => {
-      vecy3.add(ave.pos.x * dt(), ave.pos.y * dt() * Math.random() * 2, ave.pos.z * dt());
-      camPos(vec2(vecy3.screenPos.x, vecy3.screenPos.y));
+// levelManager.js
+var LevelManager = class {
+  constructor(name) {
+    this.name = name;
+    this.currentLevel = null;
+    this.player = new Player("player");
+    this.levelName = null;
+  }
+  async loadLevel(levelName) {
+    this.levelName = levelName;
+    const data = await levelLoader(levelName);
+    const level = new Level(levelName, data, this.player);
+    this.currentLevel = level;
+  }
+  destroyLevel() {
+    this.currentLevel.destroy();
+  }
+  changeLevel(level) {
+    camPos(width() / 2, height() / 2);
+    const loading = new gui([width(), height()], [0, 0], 1, 100, false, color(50, 50, 50));
+    loading.addObj(text("Loading...", { font: "sink", size: 52 }), [50, 50], 2, () => {
     });
-    wait(1, () => {
-      cancel();
+    this.destroyLevel();
+    camPos(width() / 2, height() / 2);
+    this.loadLevel(level);
+    wait(0.5, () => {
+      loading.remove();
     });
-    camPos(cam.object.sprite.pos);
   }
-};
-var Camera = class {
-  constructor(level, object) {
-    this.level = level;
-    this.object = object;
-    this.start = Object.assign({}, object.getPos());
-    camPos(object.sprite.pos);
-    this.startCameraLoop();
+  getCurrentLevel() {
+    return this.currentLevel;
   }
-  startCameraLoop() {
-    console.log(this);
-    document.addEventListener("playerMovement", pine);
+  getBlocks() {
+    return this.currentLevel.rawBlocks;
   }
-  stopCameraLoop() {
-    document.removeEventListener("playerMovement", pine);
+  getPlayer() {
+    return this.player;
   }
 };
 
@@ -3375,19 +3587,194 @@ no({
 await loadSprite("player", "sprites/player.png");
 await loadSprite("enemy", "sprites/enemy.png");
 await loadSprite("grass", "sprites/grass.png");
+await loadSprite("end", "sprites/end.png");
 await loadSprite("pick", "sprites/items/pick.png");
 await loadSprite("axe", "sprites/items/axe.png");
 await loadSprite("bow", "sprites/items/bow.png");
 await loadSprite("tile", "sprites/snow.png");
 await loadSound("rock", "sounds/rock.mp3");
 loadSprite("bad", "sprites/bad.png");
-var data = await levelLoader("test");
-var player = new Player("player");
+loadSprite("snow", "sprites/snow.png");
 loadEvents();
-var level_one = new Level("level_one", data, player);
-var camera = new Camera(level_one, player);
+var levelManager = new LevelManager("manager");
+var camera = new Camera(levelManager.getPlayer());
+await levelManager.loadLevel("test");
 document.title = "8-Bit Adventure";
+levelManager.getCurrentLevel().disable();
+camPos(width() / 2, height() / 2);
+var guide = new gui([width() - 50, height() - 50], [25, 25], 0.9, 100, false, color(50, 50, 60));
+guide.addLayer("guide", [50, 80], [50, 50], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 105);
+guide.addLayer("guide2", [50, 80], [50, 50], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 105);
+guide.addLayer("guide3", [50, 80], [50, 50], outline(1, new Color(44, 45, 47)), color(44, 45, 47), 105);
+guide.hideLayer("guide", true);
+guide.hideLayer("guide2", true);
+guide.hideLayer("guide3", true);
+guide.addObj(
+  text("8-Bit Adventures", { font: "sink", size: 48 }),
+  [0, -35],
+  1,
+  () => {
+  },
+  "guide"
+);
+guide.addObj(
+  text("an Isometric Dungeon Crawler game!", { font: "sink", size: 12 }),
+  [0, -27],
+  1,
+  () => {
+  },
+  "guide",
+  color(100, 100, 100)
+);
+guide.addObj(
+  text("Your Mission:", { font: "sink", size: 36 }),
+  [-1, -7],
+  1,
+  () => {
+  },
+  "guide",
+  color(200, 200, 200)
+);
+guide.addObj(
+  text("-Beat at least half the enemies in each level to progress\n\n\n\n-Answer a fun maths question at the end of each level to continue\n\n\n\n-Beat all three levels to win!", { font: "sink", size: 16 }),
+  [0, 18],
+  1,
+  () => {
+  },
+  "guide"
+);
+guide.addObj(
+  text("Score Points:", { font: "sink", size: 36 }),
+  [-1, -35],
+  1,
+  () => {
+  },
+  "guide2",
+  color(200, 200, 200)
+);
+guide.addObj(
+  text("-You can earn points for how quickly you beat each level:\n\n\n\n-10 points if you finish in less than 30 seconds\n\n\n\n-5 points if you finish in less than 45 seconds\n\n\n\n-2 points if you finish in less than 60 seconds\n\n\n\n-No points if you take more than 60 seconds\n\n\n\n-You can also earn points for each enemy you defeat:\n\n\n\n-Each enemy defeated is worth 5 points!", { font: "sink", size: 16 }),
+  [0, 5],
+  1,
+  () => {
+  },
+  "guide2"
+);
+guide.addObj(
+  text("How to Play:", { font: "sink", size: 36 }),
+  [-1, -35],
+  1,
+  () => {
+  },
+  "guide3",
+  color(200, 200, 200)
+);
+guide.addObj(
+  text(`-Use the WASD keys to move around
+
+
+
+-Walk over items to pick them up
+
+
+
+-Press "E" to open your inventory
+
+
+
+-Click on an item in your inventory to equip it
+
+
+
+-Click on a block with the pickaxe to break it
+
+
+
+-Get close to an enemy and click on them with a axe to attack
+
+
+
+-Click on an enemy with a bow to shoot at them from a distance`, { font: "sink", size: 16 }),
+  [0, 5],
+  1,
+  () => {
+  },
+  "guide3"
+);
+guide.addObj(
+  text("Next", { font: "sink", size: 24 }),
+  [40, 40],
+  1,
+  () => {
+    guide.hideLayer("guide2", false);
+    guide.hideLayer("guide", true);
+  },
+  "guide"
+);
+guide.addObj(
+  text("Back", { font: "sink", size: 24 }),
+  [-40, 40],
+  1,
+  () => {
+  },
+  "guide",
+  color(100, 100, 100)
+);
+guide.addObj(
+  text("Next", { font: "sink", size: 24 }),
+  [40, 40],
+  1,
+  () => {
+    guide.hideLayer("guide3", false);
+    guide.hideLayer("guide2", true);
+  },
+  "guide2"
+);
+guide.addObj(
+  text("Back", { font: "sink", size: 24 }),
+  [-40, 40],
+  1,
+  () => {
+    guide.hideLayer("guide", false);
+    guide.hideLayer("guide2", true);
+  },
+  "guide2"
+);
+guide.addObj(
+  text("Next", { font: "sink", size: 24 }),
+  [40, 40],
+  1,
+  () => {
+  },
+  "guide3",
+  color(100, 100, 100)
+);
+guide.addObj(
+  text("Back", { font: "sink", size: 24 }),
+  [-40, 40],
+  1,
+  () => {
+    guide.hideLayer("guide2", false);
+    guide.hideLayer("guide3", true);
+  },
+  "guide3"
+);
+guide.addObj(text("Welcome to 8-Bit Adventures", { font: "sink", size: 52 }), [50, 10], 1, () => {
+});
+guide.addObj(text("Start", { font: "sink", size: 52 }), [50, 35], 1, () => {
+  guide.remove();
+  levelManager.getCurrentLevel().enable();
+});
+guide.addObj(text("How to play", { font: "sink", size: 52 }), [50, 60], 1, () => {
+  guide.hideLayer("guide", false);
+  const cancel = onKeyPress("escape", () => {
+    guide.hideLayer("guide", true);
+    guide.hideLayer("guide2", true);
+    guide.hideLayer("guide3", true);
+    cancel();
+  });
+});
 export {
   camera,
-  level_one
+  levelManager
 };

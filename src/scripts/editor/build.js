@@ -3051,6 +3051,7 @@ var gui = class {
     this.layers.set("gui", this.gui);
     this.gui.objs = [];
     onClick(() => {
+      console.log("b");
       if (!this.clicked(mousePos())) {
         return;
       }
@@ -3110,7 +3111,7 @@ var gui = class {
   editObj(index, item2) {
     [...this.objs.keys()][index] = item2;
   }
-  addObj(displayed, relativePos, scale2, functionCall, parentLayer = "gui") {
+  addObj(displayed, relativePos, scale2, functionCall, parentLayer = "gui", colorV = color(255, 255, 255)) {
     const layer = this.layers.get(parentLayer);
     console.log(layer);
     const obj = add([
@@ -3118,7 +3119,8 @@ var gui = class {
       pos(relativePos[0], relativePos[1]),
       origin("center"),
       z(layer.z + 1),
-      area()
+      area(),
+      colorV
     ]);
     console.log(obj.pos);
     obj.scale = scale2;
@@ -3262,7 +3264,7 @@ var entites2 = new gui(
   99,
   true
 );
-var toggleReal = false;
+var toggleReal = true;
 var floodFill = (tempCoords) => {
   const coords = new Vec3(tempCoords.pos.x, tempCoords.pos.y, tempCoords.pos.z);
   let hit = false;

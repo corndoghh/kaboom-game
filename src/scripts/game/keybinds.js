@@ -1,5 +1,10 @@
+import { camera } from "./game";
+
+let openInventory = null
+
 export const startKeybinds = () => {
-    const openInventory = onKeyPress("e", () => {
+    openInventory = onKeyPress("e", () => {
+
 
         const inventory = new CustomEvent('inventoryEvent', {
             bubbles: true,
@@ -15,4 +20,18 @@ export const startKeybinds = () => {
 
         
     })
+
+    //remove
+    onKeyPress("c", () => {
+        camera.stopCameraLoop()
+        camPos(width()/2, height()/2)
+
+    })
+
+}
+
+
+export const stopKeybinds = () => {
+    openInventory()
+    
 }

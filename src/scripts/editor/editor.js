@@ -62,7 +62,7 @@ const entites = new gui (
     true,
 )
 
-export let toggleReal = false;
+export let toggleReal = true;
 
 const floodFill = (tempCoords) => {
     const coords = new Vec3(tempCoords.pos.x, tempCoords.pos.y, tempCoords.pos.z)

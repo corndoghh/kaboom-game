@@ -1,5 +1,5 @@
 import { isEqual } from "../globalScripts/functions"
-import { level_one } from "./game"
+import { levelManager } from "./game"
 
 export class Block {
     constructor(vec3, image) {
@@ -14,15 +14,15 @@ export class Block {
     }
 
     destroy() {
-        level_one.blocks = level_one.blocks.filter((x) => !isEqual(x.pos, this.vec3.pos))
-        level_one.rawBlocks = level_one.rawBlocks.filter((x) => !isEqual(x.pos, this.vec3.pos))
-        level_one.realBlocks = level_one.realBlocks.filter((x) => x != this)
+        levelManager.getCurrentLevel().blocks = levelManager.getCurrentLevel().blocks.filter((x) => !isEqual(x.vec3.pos, this.vec3.pos))
+        levelManager.getCurrentLevel().rawBlocks = levelManager.getCurrentLevel().rawBlocks.filter((x) => !isEqual(x.pos, this.vec3.pos))
         this.destroySoft()
     }
 
     destroySoft() {
         this.sprite.destroy()
     }
+
 }
 
 

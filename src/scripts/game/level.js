@@ -2,10 +2,12 @@ import kaboom from "kaboom";
 import { isEqual } from "../globalScripts/functions";
 import { screenToGlobal, Vec3 } from "../globalScripts/vec3";
 import { Block } from "./block";
+import { End } from "./end";
 import { Enemy } from "./enemy";
 import { Entity } from "./entity";
+import { camera } from "./game";
 import { Item } from "./item";
-import { startKeybinds } from "./keybinds";
+import { startKeybinds, stopKeybinds } from "./keybinds";
 
 const levels = new Map();
 
@@ -24,14 +26,28 @@ export class Level {
         this.items = levelData.items
         this.entites = []
         this.name = name
-        this.blocks = levelData.blocks
+        //this.blocks = levelData.blocks
         this.lastClickedBlock = null
         this.currentObjectClicked = null
         this.rawBlocks = levelData.rawBlocks
-        this.realBlocks = []
+        this.blocks = []
+
+        console.log(this.player)
+
+        camera.startCameraLoop()
+
 
 
         this.enemies = levelData.entites.filter((x) => x.entityType == "enemy")
+
+        this.end = levelData.entites.filter((x) => x.entityType == "end")[0]
+
+        this.end = new End("end", new Vec3(this.end.pos.x,this.end.pos.y, this.end.pos.z), "level2")
+
+
+
+
+
         this.entites.push(player)
         const tempPlayerPos = levelData.entites.filter((x) => x.entityType == "player")[0].pos
         this.player.moveTo(new Vec3(tempPlayerPos.x, tempPlayerPos.y, tempPlayerPos.z))
@@ -41,9 +57,12 @@ export class Level {
 
 
 
+
+
         //loading in the map Image and blocks
-        if (this.blocks != null) {
-            this.blocks.forEach((x) =>  { const a = new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image); this.realBlocks.push(a) } )
+        
+        if (this.rawBlocks != null) {
+            this.rawBlocks.forEach((x) =>  { const a = new Block(new Vec3(x.pos.x, x.pos.y, x.pos.z), x.image); this.blocks.push(a) } )
         }
         if (this.enemies != null) {
             this.enemies.forEach((x) => { const a = new Enemy(x.image, new Vec3(x.pos.x, x.pos.y, x.pos.z)); this.entites.push(a) })
@@ -238,9 +257,65 @@ export class Level {
 
     getObjectAt(vec3) { return this.getXat(vec3, this.rawBlocks) }
 
-    getBlockAt(vec3) { return this.realBlocks.filter((x) => isEqual(x.vec3.pos, vec3)) }
+    getBlockAt(vec3) { return this.blocks.filter((x) => isEqual(x.vec3.pos, vec3)) }
 
     getEntityAt(vec3) { return this.entites.filter((x) => x.vec3 == this.getXat(vec3, this.entites.map((x) => x.vec3)) ) }
+
+    destroyBlock(vec3) { let block = null; if (vec3.type == "Vec3") { block = this.getBlockAt(vec3) } else { block = vec3}; if (block) {
+        block.destroy();
+        this.blocks.splice(this.blocks.indexOf(block), 1)
+    } }
+
+
+    // destroyBlock(vec3) { let block = null; if (vec3.x != undefined) { block = this.getBlockAt(vec3) } else { block = vec3}; if (block) {
+    //     if (block[0] != undefined) { block = block[0] }
+    //     console.log(block)
+    //     block.destroy()
+    //     this.blocks.splice(this.blocks.indexOf(block), 1)
+    // } }
+
+    enable() {
+        this.startPlayerMovement()
+        this.startClickLoop()
+
+        camera.startCameraLoop()
+
+        startKeybinds()
+
+    }
+
+    disable() {
+        this.stopPlayerMovement()
+        this.stopClickLoop()
+
+        camera.stopCameraLoop()
+
+        stopKeybinds()
+
+    }
+
+    destroy() {
+        this.blocks.forEach((x) => { x.destroy() })
+
+        let getIndex = null
+
+        // for (let i = 0; i < this.entites.length; i++) {
+        //     if (this.entites[i].type != "enemy") continue
+
+        //     if (getIndex == null) {getIndex = i}
+        //     console.log(getIndex)
+            
+        //      console.log(this.entites[getIndex])
+        //     this.entites[getIndex].destroyEnemy()
+        // }
+        // console.log("HU U OOG", this.entites)
+        this.entites.forEach((x) => { if (x.type == "enemy") x.destroyEnemy() } )
+        //this.items.forEach((x) => { x.destroyItem(); this.items.splice(this.items.indexOf(x), 1) })
+        this.end.destroy()
+
+        this.disable()
+        
+    }
 
     
 

@@ -29,6 +29,7 @@ export class gui {
         this.gui.objs = []
 
         onClick(() => {
+            console.log("b")
             if (!this.clicked(mousePos())) { return }
 
             [...this.objs.keys()].filter((x) => !x.hidden).forEach((e) => {
@@ -90,7 +91,7 @@ export class gui {
 
     }
 
-    addObj(displayed, relativePos, scale, functionCall, parentLayer = "gui") {   
+    addObj(displayed, relativePos, scale, functionCall, parentLayer = "gui", colorV = color(255,255,255)) {   
         const layer = this.layers.get(parentLayer)
         console.log(layer)
         const obj = add([
@@ -98,7 +99,8 @@ export class gui {
             pos(relativePos[0], relativePos[1]),
             origin("center"),
             z(layer.z+1),
-            area()            
+            area(),
+            colorV         
         ])
         console.log(obj.pos)
         obj.scale = scale

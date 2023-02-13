@@ -1,6 +1,9 @@
 
 import { Vec3 } from "../globalScripts/vec3";
 import { camera } from "./game";
+
+let enabled = false
+
 const pine = (e) => {
     if (!e.returnValue) return;
 
@@ -10,10 +13,22 @@ const pine = (e) => {
     const distance = pos.distance(cam.start)
     if (distance > 10) {
         const ave =  pos.vecDistance(cam.start)
+        cam.transform.pos.x += ave.pos.x
+        cam.transform.pos.z += ave.pos.z
+
+        console.log(cam.transform)
+
         const tempVec = Object.assign({}, cam.start)
         const vecy3 = new Vec3(tempVec.pos.x, tempVec.pos.y, tempVec.pos.z)
         cam.start = Object.assign({}, cam.object.getPos())
         const cancel = onUpdate(() => { 
+            if (!enabled) {
+                cancel()
+                wait(0.01, () => {
+                    camPos(width()/2, height()/2)
+
+                })
+            }
             vecy3.add(ave.pos.x * dt() , ave.pos.y * dt() * Math.random()*2, ave.pos.z * dt())
             camPos(vec2(vecy3.screenPos.x, vecy3.screenPos.y))
         })
@@ -28,14 +43,19 @@ const pine = (e) => {
 
 
 export class Camera {
-    constructor(level, object) {
-        this.level = level
+    constructor(object) {
+
+        this.transform = {
+            pos: {x: 0, z: 0}
+        }
         this.object = object
         this.start = Object.assign({}, object.getPos())
 
+        this.startNew = Object.assign({}, object.sprite.pos)
+
         camPos(object.sprite.pos)
 
-        this.startCameraLoop()
+
 
         //wait(5, () => this.stopCameraLoop())
 
@@ -47,7 +67,7 @@ export class Camera {
 
 
     startCameraLoop() {
-        console.log(this)
+        enabled = true
         document.addEventListener("playerMovement", pine)
 
 
@@ -55,6 +75,8 @@ export class Camera {
 
 
     stopCameraLoop() {
+        enabled = false
+
         document.removeEventListener("playerMovement", pine)
     }
 }
