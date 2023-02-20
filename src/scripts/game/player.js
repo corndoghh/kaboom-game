@@ -4,6 +4,7 @@ import { Vec3 } from "../globalScripts/vec3";
 import { isEqual } from "../globalScripts/functions";
 import { Inventory } from "./inventory";
 import { camera, levelManager } from "./game";
+import { gui } from "../globalScripts/gui";
 
 
 const handler = (event) => {
@@ -34,6 +35,12 @@ export class Player extends Entity  {
 
         this.health = 3
 
+        this.score = 0
+
+        this.hud = []
+
+        this.startHud()
+
 
 
         //this.startMovement()
@@ -54,6 +61,44 @@ export class Player extends Entity  {
     }
 
     equipt(index) { console.log(index); this.equipped = this.inventory.getItems().get(index) }
+
+    damage() {
+        this.health -= 1
+
+        if (this.health != 0) return
+        
+        const gameover = new gui([width(), height()], [0,0], 1, 400, false, color(50,50,50))
+
+        gameover.addObj(text(`Gameover\n\nyou scored ${this.score} points`, {font: "sink", size: 36}), [50,50], 2, () => {});
+        
+        levelManager.getCurrentLevel().destroy()
+
+        gameover.addObj(text("Press 'r' or click this button to restart", {font: "sink", size: 16}), [50,70], 2, () => {})
+
+        gameover.addObj(rect(100,20), [50, 85], 2, () => {
+            window.location.reload()
+        })
+
+        onKeyPress("r", () => {
+            window.location.reload()
+
+        })
+
+
+        
+    }
+
+    startHud() {
+        const health = new gui([10,10], [10,10], 1, 400, false, color(104,205,14))
+        this.hud = [
+            health
+        ]
+
+    }
+
+    stopHud() {
+        this.hud[0].remove()
+    }
 
 
 

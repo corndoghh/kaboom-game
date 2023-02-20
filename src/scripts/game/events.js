@@ -9,7 +9,9 @@ const preventCollision = (con, e) => { if (con) { e.preventDefault(); return tru
 
 const isEndCollide = (vec, e) => { return isEqual(e.level.end.vec3, vec) }
 const isPlayerCollide = (vec, e) => { return e.level.getEntityAt(vec).filter((x) => x.type == "player") } 
-const isEnemyCollide = (vec, e) => { return e.level.enemies }
+const isEnemyCollide = (vec, e) => {
+    return levelManager.getCurrentLevel().getEntityAt(vec).filter((x) => x.type == "enemy")
+}
 
 const isBlockCollide = (vec, e) => { return e.level.getObjectAt(vec) }
 const isItemCollide = (vec, e) => { if (e.level.getEntityAt(vec) != null) { return e.level.getEntityAt(vec).filter((x) => x.type == "item") } }
@@ -70,13 +72,15 @@ const moveEvent = async (fullEvent) => {
 
             if (levelManager.getPlayer().vec3.distance(realBlock) < 2 && ((e.entity.lastCoolDown + e.entity.coolDown) - time()) <= 0) {
                 console.log(time() - (e.entity.lastCoolDown + e.entity.coolDown))
+                levelManager.attack(e.entity)
                 e.entity.lastCoolDown = time()
-                shake()
-                play("rock", {volume: 0.2})
-                levelManager.getPlayer().health -= 1
-                if (!levelManager.getPlayer().health ) {
-                    const loading = new gui([width(), height()], [0,0], 1, 100, false, color(50,50,50))    
-                }
+
+                // shake()
+                // play("rock", {volume: 0.2})
+                // levelManager.getPlayer().health -= 1
+                // if (!levelManager.getPlayer().health ) {
+                //     const loading = new gui([width(), height()], [0,0], 1, 100, false, color(50,50,50))    
+                // }
             }
 
             //console.log(levelManager.getPlayer().health) 
@@ -107,16 +111,16 @@ const clickEvent = (event) => {
             } 
             break
         }
-        case "axe": {
-            new Block(screenToGlobal(e.mouseVec), "snow")
-            console.log(e.mouseVec)
-            const enemy = isEndCollideSimple(e.mouseVec, e)
-            console.log(enemy)
-            if (enemy[0]) {
-                enemy[0].destroyEnemy()
-            }
-            break;
-        }
+        // case "axe": {
+        //     new Block(screenToGlobal(e.mouseVec), "snow")
+        //     console.log(e.mouseVec)
+        //     const enemy = isEnemyCollide(screenToGlobal(e.mouseVec), e)
+        //     console.log(enemy)
+        //     if (enemy[0]) {
+        //         enemy[0].destroyEnemy()
+        //     }
+        //     break;
+        // }
         case "bow": {
             console.log("bowful")
             break;

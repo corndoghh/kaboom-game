@@ -13,14 +13,14 @@ export const boxInput = async (boxText, title, colour = [0,0,0,0.5], isPlacehold
         outline(5, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
         origin("center"),
         pos(coords[0], coords[1]),
-        z(100)
+        z(300)
     ])
 
     const titleText = add([
         title,
         origin("center"),
         pos(coords[0], coords[1] - box.height / 2 + title.textSize),
-        z(102)
+        z(302)
     ])
 
 
@@ -31,7 +31,7 @@ export const boxInput = async (boxText, title, colour = [0,0,0,0.5], isPlacehold
         opacity(0),
         outline(1, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
 
-        z(103)
+        z(303)
     ])
 
 
@@ -40,7 +40,7 @@ export const boxInput = async (boxText, title, colour = [0,0,0,0.5], isPlacehold
         origin("center"),
         pos(coords[0], coords[1] + title.textSize / 2 ),
         opacity(isPlaceholder ? 0.5 : 1),
-        z(101)
+        z(301)
 
     ])
 

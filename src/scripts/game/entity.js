@@ -52,7 +52,7 @@ export class Entity {
     
 
 
-    walk(vec) {   
+    walk(vec, override = false, execute = null) {   
         const anotherTempVec = vec.vecDistance(this.vec3)
         const tempVec = Object.assign({}, this.vec3)
         const vecy3 = new Vec3(tempVec.pos.x, tempVec.pos.y, tempVec.pos.z)
@@ -69,7 +69,12 @@ export class Entity {
         const percentage = { x: anotherTempVec.pos.x / total, z: anotherTempVec.pos.z / total }
 
         this.walkCancel = onUpdate(() => {
-            if (vecy3.distance(anotherTempVec) < 0.5) { this.walkCancel(); this.moveTo(vec);
+            console.log("moving")
+
+            if (levelManager.getCurrentLevel().isDisabled() && !override) { this.walkCancel(); return }
+
+            if (vecy3.distance(anotherTempVec) < 0.5) { this.walkCancel(); this.moveTo(vec) ;
+
 
 
 
@@ -87,7 +92,7 @@ export class Entity {
             });
             const test = !document.dispatchEvent(movement)
             console.log(test)
-            if (test) {
+            if (test && !override) {
                 this.moveTo(new Vec3(tempVec.pos.x - 1, tempVec.pos.y, tempVec.pos.z))
                 return
             };
@@ -95,11 +100,14 @@ export class Entity {
 
             lastDis = vecy3.distance(anotherTempVec)
 
-            vecy3.add(ave.pos.x * dt() * Math.random()*0.8 , ave.pos.y * dt() * Math.random()*2, ave.pos.z * dt() * Math.random()*0.8)
+            vecy3.add(ave.pos.x * dt() * (!(Math.random()*0.8 * !override) ? 1 :  Math.random()*0.8) , ave.pos.y * dt() * Math.random()*2, ave.pos.z * dt() * (!(Math.random()*0.8 * !override) ? 1 :  Math.random()*0.8))
 
 
             //console.log(vecy3)
             this.moveTo(vecy3)
+            if (execute) execute()
+
+
         }) 
 
 

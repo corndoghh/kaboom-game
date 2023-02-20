@@ -2728,13 +2728,13 @@ var boxInput = async (boxText, title, colour = [0, 0, 0, 0.5], isPlaceholder = f
     outline(5, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
     origin("center"),
     pos(coords[0], coords[1]),
-    z(100)
+    z(300)
   ]);
   const titleText = add([
     title,
     origin("center"),
     pos(coords[0], coords[1] - box.height / 2 + title.textSize),
-    z(102)
+    z(302)
   ]);
   const outlineBox = add([
     rect(rectSize[0] - 40, boxText.textSize + 20),
@@ -2742,14 +2742,14 @@ var boxInput = async (boxText, title, colour = [0, 0, 0, 0.5], isPlaceholder = f
     origin("center"),
     opacity(0),
     outline(1, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
-    z(103)
+    z(303)
   ]);
   const textField = add([
     boxText,
     origin("center"),
     pos(coords[0], coords[1] + title.textSize / 2),
     opacity(isPlaceholder ? 0.5 : 1),
-    z(101)
+    z(301)
   ]);
   const result = await new Promise((r, _j) => {
     let returnText = "";
@@ -2897,7 +2897,7 @@ var Entity = class {
     }
     this.sprite.destroy();
   }
-  walk(vec) {
+  walk(vec, override = false, execute = null) {
     const anotherTempVec = vec.vecDistance(this.vec3);
     const tempVec = Object.assign({}, this.vec3);
     const vecy3 = new Vec3(tempVec.pos.x, tempVec.pos.y, tempVec.pos.z);
@@ -2907,6 +2907,11 @@ var Entity = class {
     let lastDis = vecy3.distance(anotherTempVec) + 1;
     const percentage = { x: anotherTempVec.pos.x / total, z: anotherTempVec.pos.z / total };
     this.walkCancel = onUpdate(() => {
+      console.log("moving");
+      if (levelManager.getCurrentLevel().isDisabled() && !override) {
+        this.walkCancel();
+        return;
+      }
       if (vecy3.distance(anotherTempVec) < 0.5) {
         this.walkCancel();
         this.moveTo(vec);
@@ -2923,14 +2928,16 @@ var Entity = class {
       });
       const test = !document.dispatchEvent(movement);
       console.log(test);
-      if (test) {
+      if (test && !override) {
         this.moveTo(new Vec3(tempVec.pos.x - 1, tempVec.pos.y, tempVec.pos.z));
         return;
       }
       ;
       lastDis = vecy3.distance(anotherTempVec);
-      vecy3.add(ave.pos.x * dt() * Math.random() * 0.8, ave.pos.y * dt() * Math.random() * 2, ave.pos.z * dt() * Math.random() * 0.8);
+      vecy3.add(ave.pos.x * dt() * (!(Math.random() * 0.8 * !override) ? 1 : Math.random() * 0.8), ave.pos.y * dt() * Math.random() * 2, ave.pos.z * dt() * (!(Math.random() * 0.8 * !override) ? 1 : Math.random() * 0.8));
       this.moveTo(vecy3);
+      if (execute)
+        execute();
     });
   }
 };
@@ -2966,7 +2973,8 @@ var Enemy = class extends Entity {
     });
   }
   stopMovementLoop() {
-    this.movementLoop();
+    if (this.movementLoop)
+      this.movementLoop();
   }
   destroyEnemy() {
     this.stopMovementLoop();
@@ -3027,6 +3035,7 @@ var Level = class {
     this.currentObjectClicked = null;
     this.rawBlocks = levelData.rawBlocks;
     this.blocks = [];
+    this.enabled = true;
     console.log(this.player);
     camera.startCameraLoop();
     this.enemies = levelData.entites.filter((x) => x.entityType == "enemy");
@@ -3174,16 +3183,24 @@ var Level = class {
     }
   }
   enable() {
+    this.enabled = true;
     this.startPlayerMovement();
     this.startClickLoop();
     camera.startCameraLoop();
     startKeybinds();
   }
   disable() {
+    this.enabled = false;
     this.stopPlayerMovement();
     this.stopClickLoop();
     camera.stopCameraLoop();
     stopKeybinds();
+  }
+  isEnabled() {
+    return this.enabled;
+  }
+  isDisabled() {
+    return !this.enabled;
   }
   destroy() {
     this.blocks.forEach((x) => {
@@ -3361,6 +3378,9 @@ var Player = class extends Entity {
     this.inventory = new Inventory();
     this.equipped = null;
     this.health = 3;
+    this.score = 0;
+    this.hud = [];
+    this.startHud();
     this.startInventoryLoop();
   }
   startInventoryLoop() {
@@ -3373,6 +3393,34 @@ var Player = class extends Entity {
     console.log(index);
     this.equipped = this.inventory.getItems().get(index);
   }
+  damage() {
+    this.health -= 1;
+    if (this.health != 0)
+      return;
+    const gameover = new gui([width(), height()], [0, 0], 1, 400, false, color(50, 50, 50));
+    gameover.addObj(text(`Gameover
+
+you scored ${this.score} points`, { font: "sink", size: 36 }), [50, 50], 2, () => {
+    });
+    levelManager.getCurrentLevel().destroy();
+    gameover.addObj(text("Press 'r' or click this button to restart", { font: "sink", size: 16 }), [50, 70], 2, () => {
+    });
+    gameover.addObj(rect(100, 20), [50, 85], 2, () => {
+      window.location.reload();
+    });
+    onKeyPress("r", () => {
+      window.location.reload();
+    });
+  }
+  startHud() {
+    const health = new gui([10, 10], [10, 10], 1, 400, false, color(104, 205, 14));
+    this.hud = [
+      health
+    ];
+  }
+  stopHud() {
+    this.hud[0].remove();
+  }
   getPos() {
     return this.vec3;
   }
@@ -3383,8 +3431,11 @@ var enabled = false;
 var pine = (e) => {
   if (!e.returnValue)
     return;
+  const before = screenToGlobal(levelManager.getPlayer().hud[0].gui.pos);
   const cam = camera;
   const pos2 = new Vec3(e.detail.to.x, e.detail.to.y, e.detail.to.z);
+  const d = Object.assign({}, cam.start);
+  console.log("BEFORE", levelManager.getPlayer().hud[0].gui.pos, d);
   const distance = pos2.distance(cam.start);
   if (distance > 10) {
     const ave = pos2.vecDistance(cam.start);
@@ -3401,6 +3452,7 @@ var pine = (e) => {
           camPos(width() / 2, height() / 2);
         });
       }
+      levelManager.getPlayer().hud[0].gui.moveBy(-(vecy3.screenPos.x - camPos().x), -(vecy3.screenPos.y - camPos().y));
       vecy3.add(ave.pos.x * dt(), ave.pos.y * dt() * Math.random() * 2, ave.pos.z * dt());
       camPos(vec2(vecy3.screenPos.x, vecy3.screenPos.y));
     });
@@ -3489,13 +3541,8 @@ var moveEvent = async (fullEvent) => {
     case "enemy": {
       if (levelManager.getPlayer().vec3.distance(realBlock) < 2 && e.entity.lastCoolDown + e.entity.coolDown - time() <= 0) {
         console.log(time() - (e.entity.lastCoolDown + e.entity.coolDown));
+        levelManager.attack(e.entity);
         e.entity.lastCoolDown = time();
-        shake();
-        play("rock", { volume: 0.2 });
-        levelManager.getPlayer().health -= 1;
-        if (!levelManager.getPlayer().health) {
-          const loading = new gui([width(), height()], [0, 0], 1, 100, false, color(50, 50, 50));
-        }
       }
     }
   }
@@ -3511,16 +3558,6 @@ var clickEvent = (event) => {
       if (block && e.to.distance(e.from) <= 6) {
         levelManager.getCurrentLevel().getBlockAt(block.pos)[0].destroy();
         console.log("nice");
-      }
-      break;
-    }
-    case "axe": {
-      new Block(screenToGlobal(e.mouseVec), "snow");
-      console.log(e.mouseVec);
-      const enemy = isEndCollideSimple(e.mouseVec, e);
-      console.log(enemy);
-      if (enemy[0]) {
-        enemy[0].destroyEnemy();
       }
       break;
     }
@@ -3568,6 +3605,70 @@ var LevelManager = class {
     wait(0.5, () => {
       loading.remove();
     });
+  }
+  async attack(enemy) {
+    const enemyStateCopy = {
+      pos: enemy.vec3,
+      size: enemy.sprite.scale
+    };
+    this.getCurrentLevel().disable();
+    enemy.stopMovementLoop();
+    this.getCurrentLevel().disable();
+    camPos(width() / 2, height() / 2);
+    const lastPlayerPos = this.player.vec3;
+    console.log("GHEHHEEH,", lastPlayerPos);
+    const attack = new gui([width(), height()], [0, 0], 1, 200, false, color(50, 50, 50));
+    attack.addObj(text("Fight Loading...", { font: "sink", size: 52 }), [50, 50], 2, () => {
+    });
+    await wait(3, () => {
+    });
+    [...attack.objs.keys()].forEach((x) => x.destroy());
+    enemy.moveTo(new Vec3(-15, 0, 15));
+    enemy.sprite.scale = 0.5;
+    enemy.walk(new Vec3(6, 0, 23), true, () => {
+      enemy.sprite.z = 202;
+    });
+    this.getPlayer().moveTo(new Vec3(25, 0, 0));
+    this.getPlayer().walk(new Vec3(8, 0, 0), true, () => {
+      this.getPlayer().sprite.z = 202;
+    });
+    this.player.sprite.z = 201;
+    await wait(2, () => {
+    });
+    shake();
+    const ready = text("Ready", { font: "sink", size: 36 });
+    attack.addObj(ready, [50, 50], 2, () => {
+    });
+    await wait(1.5, () => {
+    });
+    [...attack.objs.keys()].forEach((x) => x.destroy());
+    shake();
+    attack.addObj(text("Fight", { font: "sink", size: 52 }), [50, 50], 2, () => {
+    });
+    await wait(1.2, () => {
+    });
+    [...attack.objs.keys()].forEach((x) => x.destroy());
+    const question = [Math.floor(Math.random() * 20), ["+", "-", "*"][Math.floor(Math.random() * 2)], Math.floor(Math.random() * 20)];
+    const answer = question[1] == "+" ? question[0] + question[2] : question[1] == "-" ? question[0] - question[2] : question[0] * question[1];
+    const data = await boxInput(text("Answer", { font: "sink" }), text("What is " + question[0] + " " + question[1] + " " + question[2] + "?"), [0, 0, 0, 0.9], true);
+    shake();
+    await wait(0.5, () => {
+    });
+    if (parseInt(data) == answer) {
+      console.log("pineAPPLE");
+      enemy.destroyEnemy();
+      this.getPlayer().score += 5;
+    } else {
+      this.getPlayer().score -= 4;
+      this.getPlayer().damage();
+      enemy.sprite.scale = enemyStateCopy.size;
+      enemy.moveTo(enemyStateCopy.pos);
+      enemy.startMovementLoop();
+      enemy.lastCoolDown = time() + 2;
+    }
+    this.getPlayer().moveTo(lastPlayerPos);
+    this.getCurrentLevel().enable();
+    attack.remove();
   }
   getCurrentLevel() {
     return this.currentLevel;
@@ -3686,15 +3787,7 @@ guide.addObj(
 
 
 
--Click on a block with the pickaxe to break it
-
-
-
--Get close to an enemy and click on them with a axe to attack
-
-
-
--Click on an enemy with a bow to shoot at them from a distance`, { font: "sink", size: 16 }),
+-Click on a block with the pickaxe to break it`, { font: "sink", size: 16 }),
   [0, 5],
   1,
   () => {

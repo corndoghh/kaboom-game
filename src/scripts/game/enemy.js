@@ -14,6 +14,7 @@ export class Enemy extends Entity {
         this.lastCoolDown = time()
 
 
+
         this.startMovementLoop()
 
     }
@@ -33,7 +34,7 @@ export class Enemy extends Entity {
         })
     }
 
-    stopMovementLoop() { this.movementLoop() }
+    stopMovementLoop() { if (this.movementLoop) this.movementLoop() }
 
 
     destroyEnemy() {

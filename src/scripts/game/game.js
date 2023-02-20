@@ -136,7 +136,7 @@ guide.addObj(
     color(200,200,200)
 )
 guide.addObj(
-    text("-Use the WASD keys to move around\n\n\n\n-Walk over items to pick them up\n\n\n\n-Press "+`"E"`+" to open your inventory\n\n\n\n-Click on an item in your inventory to equip it\n\n\n\n-Click on a block with the pickaxe to break it\n\n\n\n-Get close to an enemy and click on them with a axe to attack\n\n\n\n-Click on an enemy with a bow to shoot at them from a distance", {font: "sink", size: 16}),
+    text("-Use the WASD keys to move around\n\n\n\n-Walk over items to pick them up\n\n\n\n-Press "+`"E"`+" to open your inventory\n\n\n\n-Click on an item in your inventory to equip it\n\n\n\n-Click on a block with the pickaxe to break it", {font: "sink", size: 16}),
     [0,5],
     1,
     () => {},

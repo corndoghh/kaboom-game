@@ -2713,13 +2713,13 @@ var boxInput2 = async (boxText, title, colour = [0, 0, 0, 0.5], isPlaceholder = 
     outline(5, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
     origin("center"),
     pos(coords[0], coords[1]),
-    z(100)
+    z(300)
   ]);
   const titleText = add([
     title,
     origin("center"),
     pos(coords[0], coords[1] - box.height / 2 + title.textSize),
-    z(102)
+    z(302)
   ]);
   const outlineBox = add([
     rect(rectSize[0] - 40, boxText.textSize + 20),
@@ -2727,14 +2727,14 @@ var boxInput2 = async (boxText, title, colour = [0, 0, 0, 0.5], isPlaceholder = 
     origin("center"),
     opacity(0),
     outline(1, new Color(Math.abs(colour[0] - 255), Math.abs(colour[1] - 255), Math.abs(colour[2] - 255))),
-    z(103)
+    z(303)
   ]);
   const textField = add([
     boxText,
     origin("center"),
     pos(coords[0], coords[1] + title.textSize / 2),
     opacity(isPlaceholder ? 0.5 : 1),
-    z(101)
+    z(301)
   ]);
   const result = await new Promise((r, _j) => {
     let returnText = "";

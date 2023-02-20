@@ -31,6 +31,7 @@ export class Level {
         this.currentObjectClicked = null
         this.rawBlocks = levelData.rawBlocks
         this.blocks = []
+        this.enabled = true
 
         console.log(this.player)
 
@@ -275,6 +276,7 @@ export class Level {
     // } }
 
     enable() {
+        this.enabled = true
         this.startPlayerMovement()
         this.startClickLoop()
 
@@ -285,6 +287,8 @@ export class Level {
     }
 
     disable() {
+        this.enabled = false
+
         this.stopPlayerMovement()
         this.stopClickLoop()
 
@@ -293,6 +297,12 @@ export class Level {
         stopKeybinds()
 
     }
+
+
+    isEnabled() { return this.enabled }
+    isDisabled() { return !this.enabled }
+    
+
 
     destroy() {
         this.blocks.forEach((x) => { x.destroy() })
@@ -316,6 +326,7 @@ export class Level {
         this.disable()
         
     }
+    
 
     
 
