@@ -39,7 +39,13 @@ export class Player extends Entity  {
 
         this.hud = []
 
-        this.startHud()
+        this.timeOffset = 0
+
+        //this.startHud()
+
+        this.clock = null
+
+        this.lastTime = 0
 
 
 
@@ -89,15 +95,49 @@ export class Player extends Entity  {
     }
 
     startHud() {
-        const health = new gui([10,10], [10,10], 1, 400, false, color(104,205,14))
+        const health = new gui([500,100], [10,10], 1, 400, false, color(100,100,100))
+        const score = new gui([500,100], [width()-510,10], 1, 400, false, color(100,100,100))
+        const timeG = new gui([250,250], [10,height()-260], 1, 400, false, color(100,100,100))
+
+
+
+        health.addObj(text(``, {font: "sink", size: 26}), [50,50], 1, () => {})
+        score.addObj(text(``, {font: "sink", size: 26}), [50,50], 1, () => {})
+        timeG.addObj(text(``, {font: "sink", size: 26}), [50,50], 1, () => {})
+
+
+
+        this.clock = onUpdate(() => {
+            timeG.objs.entries().next().value[0].text = Math.floor(time()) - this.timeOffset
+
+            this.lastTime = Math.floor(time()) - this.timeOffset
+            
+            health.objs.entries().next().value[0].text = `Health: ${this.health}`
+            score.objs.entries().next().value[0].text = `Score: ${this.score}`
+
+
+
+        })
+
         this.hud = [
-            health
+            health,
+            score,
+            timeG
         ]
 
     }
 
     stopHud() {
+
+
         this.hud[0].remove()
+        this.hud[1].remove()
+        this.hud[2].remove()
+
+
+
+        if (this.clock) this.clock()
+
     }
 
 

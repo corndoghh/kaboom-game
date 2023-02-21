@@ -1,9 +1,12 @@
-import { camera } from "./game";
+import { camera, levelManager } from "./game";
 
 let openInventory = null
 
+export const enabled = true
+
 export const startKeybinds = () => {
     openInventory = onKeyPress("e", () => {
+        
 
 
         const inventory = new CustomEvent('inventoryEvent', {
@@ -23,8 +26,17 @@ export const startKeybinds = () => {
 
     //remove
     onKeyPress("c", () => {
+
+
         camera.stopCameraLoop()
         camPos(width()/2, height()/2)
+
+        levelManager.getPlayer().stopHud()
+        levelManager.getPlayer().startHud(true)
+
+        
+
+
 
     })
 

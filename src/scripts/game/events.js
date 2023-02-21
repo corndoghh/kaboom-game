@@ -52,6 +52,8 @@ const moveEvent = async (fullEvent) => {
                 const data = await boxInput(text("Answer", {font: "sink"}), text("What is " + question[0] + " " + question[1] + " " + question[2] + "?"), [0,0,0,0.9], true)            
 
                 if (parseInt(data) == answer) {
+                    const s = levelManager.getPlayer().lastTime
+                    levelManager.getPlayer().score += s <= 30 ? 10 : s <= 45 ? 5 : s <= 60 ? 2 : 0
                     levelManager.changeLevel(levelManager.currentLevel.end.levelTo)
                     return 
                 }
@@ -72,11 +74,11 @@ const moveEvent = async (fullEvent) => {
 
             if (levelManager.getPlayer().vec3.distance(realBlock) < 2 && ((e.entity.lastCoolDown + e.entity.coolDown) - time()) <= 0) {
                 console.log(time() - (e.entity.lastCoolDown + e.entity.coolDown))
+                play("rock", {volume: 0.2})
                 levelManager.attack(e.entity)
                 e.entity.lastCoolDown = time()
 
                 // shake()
-                // play("rock", {volume: 0.2})
                 // levelManager.getPlayer().health -= 1
                 // if (!levelManager.getPlayer().health ) {
                 //     const loading = new gui([width(), height()], [0,0], 1, 100, false, color(50,50,50))    

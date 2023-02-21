@@ -116,6 +116,8 @@ export class gui {
     remove() {
         this.gui.destroy();
 
+        console.log("good");
+
         [...this.objs.keys()].forEach((x) => x.destroy());
         [...this.layers.values()].forEach((x) => x.destroy())
     }

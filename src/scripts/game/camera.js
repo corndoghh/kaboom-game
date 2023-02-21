@@ -48,7 +48,10 @@ const pine = (e) => {
         })
 
         camPos(cam.object.sprite.pos)
-        levelManager.getPlayer().hud[0].gui.moveBy(-(d.screenPos.x - camPos().x)  , -(d.screenPos.y - camPos().y) )
+        if (levelManager.getPlayer().hud[0] && levelManager.getPlayer().hud[1]) {
+            levelManager.getPlayer().hud[0].gui.moveBy(-(d.screenPos.x - camPos().x)  , -(d.screenPos.y - camPos().y))
+            levelManager.getPlayer().hud[1].gui.moveBy(-(d.screenPos.x - camPos().x)  , -(d.screenPos.y - camPos().y))
+        }
 
             
         //levelManager.getPlayer().hud[0].gui.moveBy(-(d.screenPos.x - camPos().x), -(d.screenPos.y - camPos().y))

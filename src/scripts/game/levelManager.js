@@ -1,6 +1,6 @@
 import { Vec3 } from "../globalScripts/vec3"
 import { gui } from "../globalScripts/gui"
-import { camera } from "./game"
+import { camera, levelManager } from "./game"
 import { Level } from "./level"
 import { levelLoader } from "./levelLoader"
 import { Player } from "./player"
@@ -22,6 +22,9 @@ export class LevelManager {
         const data = await levelLoader(levelName)
         const level = new Level(levelName, data, this.player)
         this.currentLevel = level
+        level.enable()
+        this.player.timeOffset = Math.floor(time())
+
     }
 
     destroyLevel() {
@@ -140,7 +143,12 @@ export class LevelManager {
 
         this.getCurrentLevel().enable()
 
+        levelManager.getPlayer().stopHud()
+        levelManager.getPlayer().startHud()
+
+
         attack.remove()
+
         
 
 

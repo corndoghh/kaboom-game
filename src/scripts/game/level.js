@@ -276,6 +276,9 @@ export class Level {
     // } }
 
     enable() {
+
+        this.player.startHud()
+
         this.enabled = true
         this.startPlayerMovement()
         this.startClickLoop()
@@ -287,6 +290,9 @@ export class Level {
     }
 
     disable() {
+
+        this.player.stopHud()
+
         this.enabled = false
 
         this.stopPlayerMovement()

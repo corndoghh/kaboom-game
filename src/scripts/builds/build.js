@@ -3013,6 +3013,8 @@ var startKeybinds = () => {
   onKeyPress("c", () => {
     camera.stopCameraLoop();
     camPos(width() / 2, height() / 2);
+    levelManager.getPlayer().stopHud();
+    levelManager.getPlayer().startHud(true);
   });
 };
 var stopKeybinds = () => {
@@ -3183,6 +3185,7 @@ var Level = class {
     }
   }
   enable() {
+    this.player.startHud();
     this.enabled = true;
     this.startPlayerMovement();
     this.startClickLoop();
@@ -3190,6 +3193,7 @@ var Level = class {
     startKeybinds();
   }
   disable() {
+    this.player.stopHud();
     this.enabled = false;
     this.stopPlayerMovement();
     this.stopClickLoop();
@@ -3320,6 +3324,7 @@ var gui = class {
   }
   remove() {
     this.gui.destroy();
+    console.log("good");
     [...this.objs.keys()].forEach((x) => x.destroy());
     [...this.layers.values()].forEach((x) => x.destroy());
   }
@@ -3380,7 +3385,9 @@ var Player = class extends Entity {
     this.health = 3;
     this.score = 0;
     this.hud = [];
-    this.startHud();
+    this.timeOffset = 0;
+    this.clock = null;
+    this.lastTime = 0;
     this.startInventoryLoop();
   }
   startInventoryLoop() {
@@ -3413,13 +3420,33 @@ you scored ${this.score} points`, { font: "sink", size: 36 }), [50, 50], 2, () =
     });
   }
   startHud() {
-    const health = new gui([10, 10], [10, 10], 1, 400, false, color(104, 205, 14));
+    const health = new gui([500, 100], [10, 10], 1, 400, false, color(100, 100, 100));
+    const score = new gui([500, 100], [width() - 510, 10], 1, 400, false, color(100, 100, 100));
+    const timeG = new gui([250, 250], [10, height() - 260], 1, 400, false, color(100, 100, 100));
+    health.addObj(text(``, { font: "sink", size: 26 }), [50, 50], 1, () => {
+    });
+    score.addObj(text(``, { font: "sink", size: 26 }), [50, 50], 1, () => {
+    });
+    timeG.addObj(text(``, { font: "sink", size: 26 }), [50, 50], 1, () => {
+    });
+    this.clock = onUpdate(() => {
+      timeG.objs.entries().next().value[0].text = Math.floor(time()) - this.timeOffset;
+      this.lastTime = Math.floor(time()) - this.timeOffset;
+      health.objs.entries().next().value[0].text = `Health: ${this.health}`;
+      score.objs.entries().next().value[0].text = `Score: ${this.score}`;
+    });
     this.hud = [
-      health
+      health,
+      score,
+      timeG
     ];
   }
   stopHud() {
     this.hud[0].remove();
+    this.hud[1].remove();
+    this.hud[2].remove();
+    if (this.clock)
+      this.clock();
   }
   getPos() {
     return this.vec3;
@@ -3452,7 +3479,6 @@ var pine = (e) => {
           camPos(width() / 2, height() / 2);
         });
       }
-      levelManager.getPlayer().hud[0].gui.moveBy(-(vecy3.screenPos.x - camPos().x), -(vecy3.screenPos.y - camPos().y));
       vecy3.add(ave.pos.x * dt(), ave.pos.y * dt() * Math.random() * 2, ave.pos.z * dt());
       camPos(vec2(vecy3.screenPos.x, vecy3.screenPos.y));
     });
@@ -3460,6 +3486,10 @@ var pine = (e) => {
       cancel();
     });
     camPos(cam.object.sprite.pos);
+    if (levelManager.getPlayer().hud[0] && levelManager.getPlayer().hud[1]) {
+      levelManager.getPlayer().hud[0].gui.moveBy(-(d.screenPos.x - camPos().x), -(d.screenPos.y - camPos().y));
+      levelManager.getPlayer().hud[1].gui.moveBy(-(d.screenPos.x - camPos().x), -(d.screenPos.y - camPos().y));
+    }
   }
 };
 var Camera = class {
@@ -3531,6 +3561,8 @@ var moveEvent = async (fullEvent) => {
         const answer = question[1] == "+" ? question[0] + question[2] : question[1] == "-" ? question[0] - question[2] : question[0] * question[1];
         const data = await boxInput(text("Answer", { font: "sink" }), text("What is " + question[0] + " " + question[1] + " " + question[2] + "?"), [0, 0, 0, 0.9], true);
         if (parseInt(data) == answer) {
+          const s = levelManager.getPlayer().lastTime;
+          levelManager.getPlayer().score += s <= 30 ? 10 : s <= 45 ? 5 : s <= 60 ? 2 : 0;
           levelManager.changeLevel(levelManager.currentLevel.end.levelTo);
           return;
         }
@@ -3541,6 +3573,7 @@ var moveEvent = async (fullEvent) => {
     case "enemy": {
       if (levelManager.getPlayer().vec3.distance(realBlock) < 2 && e.entity.lastCoolDown + e.entity.coolDown - time() <= 0) {
         console.log(time() - (e.entity.lastCoolDown + e.entity.coolDown));
+        play("rock", { volume: 0.2 });
         levelManager.attack(e.entity);
         e.entity.lastCoolDown = time();
       }
@@ -3590,6 +3623,8 @@ var LevelManager = class {
     const data = await levelLoader(levelName);
     const level = new Level(levelName, data, this.player);
     this.currentLevel = level;
+    level.enable();
+    this.player.timeOffset = Math.floor(time());
   }
   destroyLevel() {
     this.currentLevel.destroy();
@@ -3668,6 +3703,8 @@ var LevelManager = class {
     }
     this.getPlayer().moveTo(lastPlayerPos);
     this.getCurrentLevel().enable();
+    levelManager.getPlayer().stopHud();
+    levelManager.getPlayer().startHud();
     attack.remove();
   }
   getCurrentLevel() {
@@ -3726,6 +3763,15 @@ guide.addObj(
   },
   "guide",
   color(100, 100, 100)
+);
+guide.addObj(
+  text("WARNING!! HUD elements can be unstable press `c` to disable camera move", { font: "sink", size: 16 }),
+  [-1, -20],
+  1,
+  () => {
+  },
+  "guide",
+  color(255, 0, 0)
 );
 guide.addObj(
   text("Your Mission:", { font: "sink", size: 36 }),
@@ -3787,7 +3833,11 @@ guide.addObj(
 
 
 
--Click on a block with the pickaxe to break it`, { font: "sink", size: 16 }),
+-Click on a block with the pickaxe to break it
+
+
+
+Press esc to exit this menu`, { font: "sink", size: 16 }),
   [0, 5],
   1,
   () => {

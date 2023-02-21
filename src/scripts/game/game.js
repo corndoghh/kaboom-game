@@ -47,7 +47,7 @@ export const levelManager = new LevelManager("manager")
 
 export const camera = new Camera(levelManager.getPlayer())
 
-await levelManager.loadLevel("test")
+await levelManager.loadLevel("test")    
 
 
 
@@ -91,6 +91,17 @@ guide.addObj(
     "guide",
     color(100,100,100)
 )
+
+guide.addObj(
+    text("WARNING!! HUD elements can be unstable press `c` to disable camera move", {font: "sink", size: 16}),
+    [-1,-20],
+    1,
+    () => {},
+    "guide",
+    color(255,0,0)
+)
+
+
 guide.addObj(
     text("Your Mission:", {font: "sink", size: 36}),
     [-1,-7],
@@ -136,7 +147,7 @@ guide.addObj(
     color(200,200,200)
 )
 guide.addObj(
-    text("-Use the WASD keys to move around\n\n\n\n-Walk over items to pick them up\n\n\n\n-Press "+`"E"`+" to open your inventory\n\n\n\n-Click on an item in your inventory to equip it\n\n\n\n-Click on a block with the pickaxe to break it", {font: "sink", size: 16}),
+    text("-Use the WASD keys to move around\n\n\n\n-Walk over items to pick them up\n\n\n\n-Press "+`"E"`+" to open your inventory\n\n\n\n-Click on an item in your inventory to equip it\n\n\n\n-Click on a block with the pickaxe to break it\n\n\n\nPress esc to exit this menu", {font: "sink", size: 16}),
     [0,5],
     1,
     () => {},
