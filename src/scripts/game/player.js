@@ -68,10 +68,10 @@ export class Player extends Entity  {
 
     equipt(index) { console.log(index); this.equipped = this.inventory.getItems().get(index) }
 
-    damage() {
-        this.health -= 1
+    damage(amount = 1) {
+        this.health -= amount
 
-        if (this.health != 0) return
+        if (this.health > 0) return
         
         const gameover = new gui([width(), height()], [0,0], 1, 400, false, color(50,50,50))
 

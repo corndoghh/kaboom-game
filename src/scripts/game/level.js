@@ -43,7 +43,7 @@ export class Level {
 
         this.end = levelData.entites.filter((x) => x.entityType == "end")[0]
 
-        this.end = new End("end", new Vec3(this.end.pos.x,this.end.pos.y, this.end.pos.z), "level2")
+        this.end = new End("end", new Vec3(this.end.pos.x,this.end.pos.y, this.end.pos.z), "level")
 
 
 

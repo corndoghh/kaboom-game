@@ -16,6 +16,8 @@ const isEnemyCollide = (vec, e) => {
 const isBlockCollide = (vec, e) => { return e.level.getObjectAt(vec) }
 const isItemCollide = (vec, e) => { if (e.level.getEntityAt(vec) != null) { return e.level.getEntityAt(vec).filter((x) => x.type == "item") } }
 
+//I would make this better e.g abilty to set level in editor but i dont have time
+let levelCount = 3
 
 
 
@@ -51,10 +53,17 @@ const moveEvent = async (fullEvent) => {
                 //const data = await new Promise( async (resolve, _reject) => {
                 const data = await boxInput(text("Answer", {font: "sink"}), text("What is " + question[0] + " " + question[1] + " " + question[2] + "?"), [0,0,0,0.9], true)            
 
+
                 if (parseInt(data) == answer) {
+                    levelCount+=1
+                    if (levelCount == 4) {
+                        levelManager.getPlayer().damage(1000)
+                        return
+                    }
+
                     const s = levelManager.getPlayer().lastTime
                     levelManager.getPlayer().score += s <= 30 ? 10 : s <= 45 ? 5 : s <= 60 ? 2 : 0
-                    levelManager.changeLevel(levelManager.currentLevel.end.levelTo)
+                    levelManager.changeLevel(levelManager.currentLevel.end.levelTo+`${levelCount}`)
                     return 
                 }
 

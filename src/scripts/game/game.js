@@ -32,6 +32,8 @@ loadSprite("bad", "sprites/bad.png")
 
 
 
+
+
 // const item = new Item("pick", [6,0,27])
 // const a = new Item("axe", [5,0,10])
 // const b = new Item("bow", [7,0,20])
@@ -47,7 +49,7 @@ export const levelManager = new LevelManager("manager")
 
 export const camera = new Camera(levelManager.getPlayer())
 
-await levelManager.loadLevel("test")    
+await levelManager.loadLevel("level1")    
 
 
 

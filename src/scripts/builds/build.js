@@ -3042,7 +3042,7 @@ var Level = class {
     camera.startCameraLoop();
     this.enemies = levelData.entites.filter((x) => x.entityType == "enemy");
     this.end = levelData.entites.filter((x) => x.entityType == "end")[0];
-    this.end = new End("end", new Vec3(this.end.pos.x, this.end.pos.y, this.end.pos.z), "level2");
+    this.end = new End("end", new Vec3(this.end.pos.x, this.end.pos.y, this.end.pos.z), "level");
     this.entites.push(player);
     const tempPlayerPos = levelData.entites.filter((x) => x.entityType == "player")[0].pos;
     this.player.moveTo(new Vec3(tempPlayerPos.x, tempPlayerPos.y, tempPlayerPos.z));
@@ -3400,9 +3400,9 @@ var Player = class extends Entity {
     console.log(index);
     this.equipped = this.inventory.getItems().get(index);
   }
-  damage() {
-    this.health -= 1;
-    if (this.health != 0)
+  damage(amount = 1) {
+    this.health -= amount;
+    if (this.health > 0)
       return;
     const gameover = new gui([width(), height()], [0, 0], 1, 400, false, color(50, 50, 50));
     gameover.addObj(text(`Gameover
@@ -3532,6 +3532,7 @@ var isItemCollide = (vec, e) => {
     return e.level.getEntityAt(vec).filter((x) => x.type == "item");
   }
 };
+var levelCount = 3;
 var moveEvent = async (fullEvent) => {
   if (levelManager.getPlayer().inventory.isOpen()) {
     fullEvent.preventDefault();
@@ -3561,9 +3562,14 @@ var moveEvent = async (fullEvent) => {
         const answer = question[1] == "+" ? question[0] + question[2] : question[1] == "-" ? question[0] - question[2] : question[0] * question[1];
         const data = await boxInput(text("Answer", { font: "sink" }), text("What is " + question[0] + " " + question[1] + " " + question[2] + "?"), [0, 0, 0, 0.9], true);
         if (parseInt(data) == answer) {
+          levelCount += 1;
+          if (levelCount == 4) {
+            levelManager.getPlayer().damage(1e3);
+            return;
+          }
           const s = levelManager.getPlayer().lastTime;
           levelManager.getPlayer().score += s <= 30 ? 10 : s <= 45 ? 5 : s <= 60 ? 2 : 0;
-          levelManager.changeLevel(levelManager.currentLevel.end.levelTo);
+          levelManager.changeLevel(levelManager.currentLevel.end.levelTo + `${levelCount}`);
           return;
         }
         levelManager.changeLevel(levelManager.levelName);
@@ -3736,7 +3742,7 @@ loadSprite("snow", "sprites/snow.png");
 loadEvents();
 var levelManager = new LevelManager("manager");
 var camera = new Camera(levelManager.getPlayer());
-await levelManager.loadLevel("test");
+await levelManager.loadLevel("level1");
 document.title = "8-Bit Adventure";
 levelManager.getCurrentLevel().disable();
 camPos(width() / 2, height() / 2);
